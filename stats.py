@@ -25,6 +25,8 @@ class SimpleStats(Stats):
      
 
     def __init__(self, attack, defense, speed, max_hp) -> None:
+        # TODO: Implement
+        pass
         self.attack = attack
         self.defense = defense
         self.speed = speed
@@ -57,14 +59,14 @@ class ComplexStats(Stats):
         self.max_hp_formula = max_hp_formula
 
 
-    def get_attack(self, level):
+    def get_attack(self, level: int):
         pass
 
-    def get_defense(self, level):
+    def get_defense(self, level: int):
         raise NotImplementedError
 
-    def get_speed(self, level):
+    def get_speed(self, level: int):
         raise NotImplementedError
 
-    def get_max_hp(self, level):
+    def get_max_hp(self, level: int):
         raise NotImplementedError

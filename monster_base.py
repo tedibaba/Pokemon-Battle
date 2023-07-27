@@ -7,6 +7,12 @@ class MonsterBase(abc.ABC):
 
     
     def __init__(self, simple_mode=True, level:int=1) -> None:
+        """
+        Initialise an instance of a monster.
+
+        :simple_mode: Whether to use the simple or complex stats of this monster
+        :level: The starting level of this monster. Defaults to 1.
+        """
         self.simple_mode = simple_mode
         self.init_level = level
         self.curr_level = level
@@ -14,36 +20,43 @@ class MonsterBase(abc.ABC):
         self.hp  = self.stats.get_max_hp()
 
     def get_level(self):
+        """The current level of this monster instance"""
         return self.level
 
     def level_up(self):
+        """Increase the level of this monster instance by 1"""
         self.curr_level += 1
 
     def get_hp(self):
+        """Get the current HP of this monster instance"""
         return self.hp
 
     def set_hp(self, val):
-        self.hp = val
-
-    def get_stat_args(self):
-        return self.stats
+        """Set the current HP of this monster instance"""
+        raise NotImplementedError
 
     def get_attack(self):
+        """Get the attack of this monster instance"""
         return self.stats.get_attack()
 
     def get_defense(self):
+        """Get the defense of this monster instance"""
         return self.stats.get_defense()
 
     def get_speed(self):
+        """Get the speed of this monster instance"""
         return self.stats.get_speed()
 
     def get_max_hp(self):
+        """Get the maximum HP of this monster instance"""
         return self.stats.get_max_hp()
 
     def alive(self) -> bool:
+        """Whether the current monster instance is alive (HP > 0 )"""
         return self.hp > 0
 
     def attack(self, other: MonsterBase):
+        """Attack another monster instance"""
         # Step 1: Compute attack stat vs. defense stat
         # Step 2: Apply type effectiveness
         # Step 3: Ceil to int
@@ -51,10 +64,12 @@ class MonsterBase(abc.ABC):
         pass
 
     def ready_to_evolve(self) -> bool:
+        """Whether this monster is ready to evolve. See assignment spec for specific logic."""
         return True if self.curr_level > self.init_level and self.get_evolution() else False
             
 
     def evolve(self) -> MonsterBase:
+        """Evolve this monster instance by returning a new instance of a monster class."""
         return self.get_evolution()
     
     def __str__(self) -> str:
