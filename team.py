@@ -12,6 +12,22 @@ from data_structures.referential_array import ArrayR
 if TYPE_CHECKING:
     from battle import Battle
 
+def validate_input(prompt, valid_type):
+	"""
+	Repeatedly ask user for input until they enter an input
+	that is of the correct type
+
+	:param prompt: The prompt to display to the user, string.
+	:param valid_inputs: The type of value that is accepted
+	:return: The user's input, string.
+	"""
+	input_option = input(prompt)
+	# Loops until it the input is valid
+	while not type(input_option, valid_type):
+		print("Invalid input, please try again.")
+		input_option = input(prompt)
+	return input_option
+
 class MonsterTeam:
 
     class TeamMode(BaseEnum):
@@ -48,12 +64,14 @@ class MonsterTeam:
         else:
             raise ValueError(f"selection_mode {selection_mode} not supported.")
         self.team = ArrayR(self.TEAM_LIMIT)
+        self.team_increment = 0
 
     def add_to_team(self, monster: MonsterBase):
-        raise NotImplementedError
+        self.team[self.team_increment] = monster
+        self.team_increment += 1
 
     def retrieve_from_team(self) -> MonsterBase:
-        raise NotImplementedError
+        if self.team_mode 
 
     def special(self) -> None:
         raise NotImplementedError
@@ -189,14 +207,19 @@ class MonsterTeam:
         This monster cannot be spawned.
         Which monster are you spawning? 1
         """
-        team_size = int(input("Enter the number of monsters on your team: "))
+        while True:
+            try:
+                team_size = int(input("Enter the number of monsters on your team: "))
+                break
+            except:
+                print("Please enter a number between 1 and 6.")
         #Check for int??
         monsters = get_all_monsters()
         while team_size > 0:
-            monster = input("Enter the name of the monster you would like on your team: ")
-            if  in monsters: #DICT
+            monster_index = int(input("Enter the index of the monster you would like on your team: "))
+            if 1<= monster_index <= 41 : #DICT
                 print("COOL")
-                self.add_to_team(monster())
+                self.add_to_team(monsters[monster_index]())
                 team_size -= 1
             else:
                 print("Sorry, that monster does not exist. Please enter another monster.")
