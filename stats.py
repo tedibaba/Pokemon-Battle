@@ -22,21 +22,25 @@ class Stats(abc.ABC):
 
 
 class SimpleStats(Stats):
+     
 
     def __init__(self, attack, defense, speed, max_hp) -> None:
-        raise NotImplementedError
+        self.attack = attack
+        self.defense = defense
+        self.speed = speed
+        self.max_hp = max_hp
 
     def get_attack(self):
-        raise NotImplementedError
+        return self.attack
 
     def get_defense(self):
-        raise NotImplementedError
+        return self.defense
 
     def get_speed(self):
-        raise NotImplementedError
+        return self.speed
 
     def get_max_hp(self):
-        raise NotImplementedError
+        return self.max_hp
 
 class ComplexStats(Stats):
 
@@ -47,10 +51,14 @@ class ComplexStats(Stats):
         speed_formula: ArrayR[str],
         max_hp_formula: ArrayR[str],
     ) -> None:
-        raise NotImplementedError
+        self.attack_formula = attack_formula
+        self.defense_formula = defense_formula
+        self.speed_formula = speed_formula
+        self.max_hp_formula = max_hp_formula
+
 
     def get_attack(self, level):
-        raise NotImplementedError
+        pass
 
     def get_defense(self, level):
         raise NotImplementedError

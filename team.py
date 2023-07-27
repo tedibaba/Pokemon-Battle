@@ -47,6 +47,7 @@ class MonsterTeam:
             self.select_provided(**kwargs)
         else:
             raise ValueError(f"selection_mode {selection_mode} not supported.")
+        self.team = ArrayR(self.TEAM_LIMIT)
 
     def add_to_team(self, monster: MonsterBase):
         raise NotImplementedError
@@ -63,6 +64,7 @@ class MonsterTeam:
     def select_randomly(self):
         team_size = RandomGen.randint(1, self.TEAM_LIMIT)
         monsters = get_all_monsters()
+        print(monsters[0].get_name())
         n_spawnable = 0
         for x in range(len(monsters)):
             if monsters[x].can_be_spawned():
@@ -76,13 +78,25 @@ class MonsterTeam:
                     cur_index += 1
                     if cur_index == spawner_index:
                         # Spawn this monster
+                        print(monsters[x])
                         self.add_to_team(monsters[x]())
                         break
             else:
                 raise ValueError("Spawning logic failed.")
 
     def select_manually(self):
-        raise NotImplementedError
+        team_size = int(input("Enter the number of monsters on your team: "))
+        #Check for int??
+        monsters = get_all_monsters()
+        while team_size > 0:
+            monster = input("Enter the name of the monster you would like on your team: ")
+            if  in monsters: #DICT
+                print("COOL")
+                self.add_to_team(monster())
+                team_size -= 1
+            else:
+                print("Sorry, that monster does not exist. Please enter another monster.")
+
 
     def select_provided(self, provided_monsters:Optional[ArrayR[type[MonsterBase]]]=None):
         raise NotImplementedError
@@ -96,9 +110,8 @@ class MonsterTeam:
 
 if __name__ == "__main__":
     team = MonsterTeam(
-        team_mode=MonsterTeam.TeamMode.OPTIMISE,
-        selection_mode=MonsterTeam.SelectionMode.RANDOM,
-        sort_key=MonsterTeam.SortMode.HP,
+        team_mode=MonsterTeam.TeamMode.FRONT,
+        selection_mode=MonsterTeam.SelectionMode.MANUAL
     )
     print(team)
     while len(team):

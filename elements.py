@@ -50,11 +50,12 @@ class EffectivenessCalculator:
     instance: EffectivenessCalculator = None
 
     def __init__(self, element_names: ArrayR[str], effectiveness_values: ArrayR[float]) -> None:
-        raise NotImplementedError
+        self.element_names = element_names
+        self.effectiveness_values = effectiveness_values
 
     @classmethod
     def get_effectiveness(cls, type1: Element, type2: Element) -> float:
-        raise NotImplementedError
+        return EffectivenessCalculator.instance.effectiveness_values[18 * (type2.value -1) + type1] 
 
     @classmethod
     def from_csv(cls, csv_file: str) -> EffectivenessCalculator:
@@ -68,13 +69,15 @@ class EffectivenessCalculator:
             a_all = ArrayR(len(rest))
             for i in range(len(header)):
                 a_header[i] = header[i]
+            
             for i in range(len(rest)):
                 a_all[i] = float(rest[i])
+
             return EffectivenessCalculator(a_header, a_all)
 
     @classmethod
     def make_singleton(cls):
-        cls.instance = EffectivenessCalculator.from_csv("type_effectiveness.csv")
+        cls.instance = EffectivenessCalculator.from_csv("./type_effectiveness.csv")
 
 EffectivenessCalculator.make_singleton()
 
