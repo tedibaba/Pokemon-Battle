@@ -5,7 +5,6 @@ from stats import Stats
 
 class MonsterBase(abc.ABC):
 
-    
     def __init__(self, simple_mode=True, level:int=1) -> None:
         """
         Initialise an instance of a monster.

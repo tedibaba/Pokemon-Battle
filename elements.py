@@ -107,7 +107,7 @@ class EffectivenessCalculator:
 
     @classmethod
     def make_singleton(cls):
-        cls.instance = EffectivenessCalculator.from_csv("./type_effectiveness.csv")
+        cls.instance = EffectivenessCalculator.from_csv("type_effectiveness.csv")
 
 EffectivenessCalculator.make_singleton()
 
