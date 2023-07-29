@@ -85,7 +85,11 @@ class EffectivenessCalculator:
 
         Example: EffectivenessCalculator.get_effectiveness(Element.FIRE, Element.WATER) == 0.5
         """
-        return EffectivenessCalculator.instance.effectiveness_values[18 * (type2.value -1) + type1] 
+
+        row = cls.instance.element_names.index(type1.name.capitalize())
+        column = cls.instance.element_names.index(type2.name.capitalize())
+
+        return EffectivenessCalculator.instance.effectiveness_values[len(cls.instance.element_names) * row + column] 
 
     @classmethod
     def from_csv(cls, csv_file: str) -> EffectivenessCalculator:

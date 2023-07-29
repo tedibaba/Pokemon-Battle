@@ -40,7 +40,9 @@ class TestTeam(TestCase):
         self.assertIsInstance(thundrake, Thundrake)
 
         # Team is now [Aquariuma, Flamikin]
+
         team.special()
+
         # Team is now [Flamikin, Aquariuma]
         flamikin = team.retrieve_from_team()
         aquariuma = team.retrieve_from_team()
@@ -48,9 +50,12 @@ class TestTeam(TestCase):
         self.assertIsInstance(aquariuma, Aquariuma)
 
         # Regen the team
+
         team.regenerate_team()
+
         # Team is now [Thundrake, Vineon, Aquariuma, Flamikin]
         team.special()
+        
         # Team is now [Aquariuma, Vineon, Thundrake, Flamikin]
 
         aquariuma = team.retrieve_from_team()
@@ -79,6 +84,7 @@ class TestTeam(TestCase):
         self.assertIsInstance(aquariuma, Aquariuma)
         team.add_to_team(aquariuma)
         team.add_to_team(flamikin)
+
         vineon = team.retrieve_from_team()
         thundrake = team.retrieve_from_team()
         aquariuma = team.retrieve_from_team()
@@ -92,6 +98,8 @@ class TestTeam(TestCase):
         # Flamikin, Normake, Vineon, Aquariuma, Thundrake
         team.special()
         # Thundrake, Aquariuma, Vineon, Flamikin, Normake
+        print(team.team.array)
+        print(team.team.front)
         thundrake = team.retrieve_from_team()
         aquariuma = team.retrieve_from_team()
         vineon = team.retrieve_from_team()
@@ -213,7 +221,7 @@ class TestTeam(TestCase):
             team_mode=MonsterTeam.TeamMode.BACK,
             selection_mode=MonsterTeam.SelectionMode.RANDOM,
         )
-        self.assertEqual(len(team), 6)
+        self.assertEqual(len(team.team), 6)
         m1 = team.retrieve_from_team()
         m2 = team.retrieve_from_team()
         m3 = team.retrieve_from_team()
@@ -235,7 +243,7 @@ class TestTeam(TestCase):
         )
         sys.stdout = self._stdout
 
-        self.assertEqual(len(team), 2)
+        self.assertEqual(len(team.team), 2)
         self.assertIsInstance(team.retrieve_from_team(), Flamikin)
         self.assertIsInstance(team.retrieve_from_team(), Soundcobra)
 
@@ -255,5 +263,5 @@ class TestTeam(TestCase):
         )
         sys.stdout = self._stdout
 
-        self.assertEqual(len(team), 1)
+        self.assertEqual(len(team.team), 1)
         self.assertIsInstance(team.retrieve_from_team(), Flamikin)

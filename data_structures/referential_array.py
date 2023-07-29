@@ -37,6 +37,8 @@ class ArrayR(Generic[T]):
             raise ValueError("Array length should be larger than or equal to 0.")
         self.array = (length * py_object)()  # initialises the space
         self.array[:] = [None for _ in range(length)]
+        self.length = 0
+
 
     def __len__(self) -> int:
         """Returns the length of the array
@@ -86,3 +88,5 @@ class ArrayR(Generic[T]):
         for x in range(len(self)):
             ret.append(self[x])
         return ret
+    
+

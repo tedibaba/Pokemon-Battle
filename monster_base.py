@@ -16,11 +16,11 @@ class MonsterBase(abc.ABC):
         self.init_level = level
         self.curr_level = level
         self.stats = self.get_simple_stats()
-        self.hp  = self.stats.get_max_hp()
+        self.hp  = self.get_max_hp()
 
     def get_level(self):
         """The current level of this monster instance"""
-        return self.level
+        return self.curr_level
 
     def level_up(self):
         """Increase the level of this monster instance by 1"""
@@ -32,7 +32,7 @@ class MonsterBase(abc.ABC):
 
     def set_hp(self, val):
         """Set the current HP of this monster instance"""
-        raise NotImplementedError
+        self.hp = val
 
     def get_attack(self):
         """Get the attack of this monster instance"""
@@ -69,10 +69,12 @@ class MonsterBase(abc.ABC):
 
     def evolve(self) -> MonsterBase:
         """Evolve this monster instance by returning a new instance of a monster class."""
-        return self.get_evolution()
+        evolution =  (self.get_evolution())(level = self.curr_level)
+        evolution.set_hp(evolution.get_hp() - (self.get_max_hp() - self.get_hp()))
+        return evolution
     
     def __str__(self) -> str:
-        return "LV." + self.curr_level + " " + self.get_name() + ", " + self.get_hp() + "/" + self.get_max_hp() + " HP" 
+        return "LV." + str(self.curr_level) + " " + self.get_name() + ", " + str(self.get_hp()) + "/" + str(self.get_max_hp()) + " HP" 
 
     ### NOTE
     # Below is provided by the factory - classmethods

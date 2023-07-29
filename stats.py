@@ -1,6 +1,8 @@
 import abc
 
 from data_structures.referential_array import ArrayR
+from data_structures.stack_adt import ArrayStack
+
 
 class Stats(abc.ABC):
 
@@ -53,14 +55,30 @@ class ComplexStats(Stats):
         speed_formula: ArrayR[str],
         max_hp_formula: ArrayR[str],
     ) -> None:
-        self.attack_formula = attack_formula
-        self.defense_formula = defense_formula
-        self.speed_formula = speed_formula
-        self.max_hp_formula = max_hp_formula
+        self.attack_formula = process_into_stack(attack_formula)
+        self.defense_formula = process_into_stack(defense_formula)
+        self.speed_formula = process_into_stack(speed_formula)
+        self.max_hp_formula = process_into_stack(max_hp_formula)
 
 
     def get_attack(self, level: int):
-        pass
+        number_stack = ArrayStack[str](len(self.attack_formula))
+        operation_stack = ArrayStack[str](len(self.attack_formula))
+        operations = ["+", "-", '*', '/', 'power', "sqrt", "middle"]
+        while not self.attack_formula.is_empty():
+            top = self.attack_formula.pop()
+            if top in operations:
+                operation_stack.push(top)
+            else:
+                operation = operation_stack.pop()
+                if operation == "sqrt":
+                    
+                other_num = self.attack_formula.pop()
+                
+                
+
+
+        
 
     def get_defense(self, level: int):
         raise NotImplementedError
@@ -70,3 +88,11 @@ class ComplexStats(Stats):
 
     def get_max_hp(self, level: int):
         raise NotImplementedError
+    
+    @classmethod
+    def process_into_stack(cls, formula: ArrayR[str]) -> ArrayStack[str]:
+        
+        formula_stack = ArrayStack[str](len(formula))
+        for i in formula:
+            formula_stack.push(i)
+        return formula_stack
