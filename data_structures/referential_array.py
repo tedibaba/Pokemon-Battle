@@ -59,6 +59,7 @@ class ArrayR(Generic[T]):
         :pre: index in between 0 and length - self.array[] checks it
         """
         self.array[index] = value
+    
 
     def index(self, item: T) -> T:
         for index, arr_item in enumerate(self.array):
@@ -89,4 +90,18 @@ class ArrayR(Generic[T]):
             ret.append(self[x])
         return ret
     
+    def __contains__(self, item) -> bool:
+        """Searches for if an object exists in the array using a linear search
+        :complexity: O(n) in worst case and O(1) is best case where n is the number of items in the array
+        :param item: The item to search for
+        """
+        for i in range(len(self)):
+            if self[i] == item:
+                return True
+        return False
+    
 
+    def _shuffle_left(self, index: int) -> None:
+        """ Shuffle items starting at a given position to the left. """
+        for i in range(index, len(self) - 1):
+            self.array[i] = self.array[i + 1]

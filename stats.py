@@ -1,8 +1,10 @@
 import abc
+import math
 
 from data_structures.referential_array import ArrayR
 from data_structures.stack_adt import ArrayStack
-
+from data_structures.array_sorted_list import ArraySortedList
+from data_structures.queue_adt import CircularQueue
 
 class Stats(abc.ABC):
 
@@ -55,44 +57,97 @@ class ComplexStats(Stats):
         speed_formula: ArrayR[str],
         max_hp_formula: ArrayR[str],
     ) -> None:
-        self.attack_formula = process_into_stack(attack_formula)
-        self.defense_formula = process_into_stack(defense_formula)
-        self.speed_formula = process_into_stack(speed_formula)
-        self.max_hp_formula = process_into_stack(max_hp_formula)
+        self.attack_formula = self.process_into_stack(attack_formula)
+        self.defense_formula = self.process_into_stack(defense_formula)
+        self.speed_formula = self.process_into_stack(speed_formula)
+        self.max_hp_formula = self.process_into_stack(max_hp_formula)
 
 
     def get_attack(self, level: int):
-        number_stack = ArrayStack[str](len(self.attack_formula))
-        operation_stack = ArrayStack[str](len(self.attack_formula))
-        operations = ["+", "-", '*', '/', 'power', "sqrt", "middle"]
-        while not self.attack_formula.is_empty():
-            top = self.attack_formula.pop()
-            if top in operations:
-                operation_stack.push(top)
-            else:
-                operation = operation_stack.pop()
-                if operation == "sqrt":
-                    
-                other_num = self.attack_formula.pop()
-                
-                
-
-
-        
+        return self.calculate(self.attack_formula, level)
+                 
 
     def get_defense(self, level: int):
-        raise NotImplementedError
+        return self.calculate(self.defense_formula, level)
 
     def get_speed(self, level: int):
-        raise NotImplementedError
+        return self.calculate(self.speed_formula, level)
 
     def get_max_hp(self, level: int):
-        raise NotImplementedError
+        return self.calculate(self.max_hp_formula, level)
     
+    def calculate(self, formula : ArrayR[str], level: int):
+        stack = ArrayStack[str](len(formula))
+        operations = ["+", "-", '*', '/', 'power', "sqrt", "middle"] #Cannot use Array like this 
+        while not formula.is_empty():
+            top = formula.serve()
+            if top not in operations:
+                if top == "level":
+                    stack.push(level)
+                else:
+                    stack.push(top) 
+            else:
+                if top == "sqrt":
+                    a = stack.pop()
+                    stack.push(math.sqrt(float(a)))
+                else:
+                    a = stack.pop()
+                    b= stack.pop()
+                    if top == "middle":
+                        c = stack.pop()
+                        sorted_list = ArraySortedList[int](3)
+                        sorted_list.add(float(a))
+                        sorted_list.add(float(b))
+                        sorted_list.add(float(c))
+                        stack.push(str(sorted_list[1]))
+                    else:
+                        if top == "power":
+                            top = "**" 
+                        expr = f"float({b}) {top} float({a})"
+                        stack.push(str(eval(expr)))
+        return int(float((stack.pop())))
+
     @classmethod
     def process_into_stack(cls, formula: ArrayR[str]) -> ArrayStack[str]:
         
-        formula_stack = ArrayStack[str](len(formula))
+        formula_stack = CircularQueue[str](len(formula))
         for i in formula:
-            formula_stack.push(i)
+            formula_stack.append(i)
         return formula_stack
+
+def test_complex_stats():
+    cs = ComplexStats(
+        ArrayR.from_list([
+            "5",
+            "6",
+            "+"
+        ]),
+        ArrayR.from_list([
+            "9",
+            "2",
+            "8",
+            "middle"
+        ]),
+        ArrayR.from_list([
+            "level",
+            "3",
+            "power",
+            "1",
+            "2",
+            "3",
+            "middle",
+            "*"
+        ]),
+        ArrayR.from_list([
+            "level",
+            "5",
+            "-",
+            "sqrt",
+            "1",
+            "10",
+            "middle",
+        ]),
+    )
+    cs.get_speed(5)
+
+test_complex_stats()

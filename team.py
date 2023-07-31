@@ -10,25 +10,10 @@ from helpers import get_all_monsters
 from data_structures.referential_array import ArrayR
 from data_structures.queue_adt import CircularQueue
 from data_structures.stack_adt import ArrayStack
+from data_structures.array_sorted_list import ArraySortedList
 
 if TYPE_CHECKING:
     from battle import Battle
-
-def validate_input(prompt, valid_type):
-	"""
-	Repeatedly ask user for input until they enter an input
-	that is of the correct type
-
-	:param prompt: The prompt to display to the user, string.
-	:param valid_inputs: The type of value that is accepted
-	:return: The user's input, string.
-	"""
-	input_option = input(prompt)
-	# Loops until it the input is valid
-	while not type(input_option, valid_type):
-		print("Invalid input, please try again.")
-		input_option = input(prompt)
-	return input_option
 
 class MonsterTeam:
 
@@ -65,14 +50,13 @@ class MonsterTeam:
             self.team = CircularQueue[MonsterBase](6)
 
         elif team_mode == self.TeamMode.OPTIMISE:
-            self.sort_mode = kwargs["sort_key"]
+            self.sort_mode = str(kwargs["sort_key"])[9:].lower()
             self.descending = True 
             self.team_increment = 0
             self.team = ArrayR[MonsterBase](6)  
   
         else:
             raise ValueError(f"team_mode {team_mode} not supported.")
-        # self.team = ArrayR[MonsterBase]()
 
         #We could use a set for the revive team
         self.monsters = ArrayR[MonsterBase](6) #Keeping a track of the team for revival What do I do for revival :(
@@ -89,8 +73,6 @@ class MonsterTeam:
         
     
     def add_to_team(self, monster: MonsterBase):
-        # if len(self.team) >=6  :
-        #     raise ValueError("No more monster can be added to team")
         if self.team_mode == self.TeamMode.FRONT:
             self.team.push(monster)
         elif self.team_mode == self.TeamMode.BACK:
@@ -98,22 +80,11 @@ class MonsterTeam:
         elif self.team_mode == self.TeamMode.OPTIMISE:
             if self.team[0] == None:
                 self.team[0] = monster
+                self.team_increment += 1
             else:
                 #Use an insertion sort iteration once since we are sure the array is sorted
-                if self.descending:
-                    i = self.team_increment - 1
-                    while i >= 0 and monster.get_hp() > self.team[i].get_hp(): #Not always get_hp change this with eval
-                        self.team[i + 1] = self.team[i]
-                        i -=1 
-                    self.team[i+ 1] = monster
-                     
-                else:
-                    i = self.team_increment - 1
-                    while i >= 0 and monster.get_hp() < self.team[i].get_hp():
-                        self.team[i + 1] = self.team[i]
-                        i -=1 
-                    self.team[i+ 1] = monster
-            self.team_increment += 1
+                self.sort_for_optimise(self.team_increment, monster)
+
             
 
     def retrieve_from_team(self) -> MonsterBase:
@@ -121,10 +92,11 @@ class MonsterTeam:
             return self.team.pop()
         elif self.team_mode == self.TeamMode.BACK:
             return self.team.serve()            
-            # return self.team[0]
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            return self.team[0]
-        
+            self.team_increment -= 1
+            monster_to_retrieve = self.team[0]
+            self.team._shuffle_left(0)
+            return monster_to_retrieve
 
     def special(self) -> None:
 
@@ -150,25 +122,50 @@ class MonsterTeam:
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
             self.descending = not self.descending
-            for i in range(self.team_increment // 2): #This is wrong? Doesnt account for if the monster has lost health?
-                self.team[i],self.team[self.team_increment - 1 - i] = self.team[self.team_increment - 1 - i], self.team[i]
+            self.sort_for_optimise()
 
     def regenerate_team(self) -> None:
+        i = 0
         if self.team_mode == self.TeamMode.FRONT:
             self.team.clear()
-            for i in range(self.team_increment_monsters):
+            while self.monsters[i] != None:
                 self.team.push(self.monsters[i])
+                i += 1
         elif self.team_mode == self.TeamMode.BACK:
             self.team.clear()
-            for i in range(self.team_increment_monsters):
-                self.team.append(self.monsters[i])        
+            while self.monsters[i] != None:
+                self.team.append(self.monsters[i])
+                i += 1     
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            return self.team[0]
+            self.team = ArrayR[MonsterBase](6)
+            self.team_increment = 0
+            self.descending = True
+            while self.monsters[i] != None:
+                self.add_to_team(self.monsters[i])
+                i += 1
 
-
-        # for monster in range(len(self.team)):
-        #     self.team[monster].set_hp(self.team[monster].get_max_hp())
+    def sort_for_optimise(self, sorted_up_to: int = 1, monster = None):
+        i = -1
+        if monster:
+            self.team[self.team_increment] = monster
+            self.team_increment += 1
+        if self.descending:
+            for mark in range(sorted_up_to, self.team_increment):
+                temp = self.team[mark]
+                i = mark - 1
+                while i >= 0 and eval(f"self.team[i].get_{self.sort_mode}() < temp.get_{self.sort_mode}()"):
+                    self.team[i + 1] = self.team[i]
+                    i -= 1
+                self.team[i + 1] = temp
+        else:
+            for mark in range(sorted_up_to, self.team_increment):
+                temp = self.team[mark]
+                i = mark - 1
+                while i >= 0 and eval(f"self.team[i].get_{self.sort_mode}() > temp.get_{self.sort_mode}()"):
+                    self.team[i + 1] = self.team[i]
+                    i -= 1
+                self.team[i + 1] = temp
 
     def select_randomly(self):
         team_size = RandomGen.randint(1, self.TEAM_LIMIT)
@@ -189,6 +186,8 @@ class MonsterTeam:
                         # Spawn this monster
                         print(monsters[x])
                         self.add_to_team(monsters[x]())
+                        self.monsters[self.team_increment_monsters] = monsters[x]()
+                        self.team_increment_monsters += 1
                         break
             else:
                 raise ValueError("Spawning logic failed.")
@@ -237,11 +236,7 @@ class MonsterTeam:
         25: Strikeon [✔️]
         26: Venomcoil [✔️]
         27: Pythondra [✔️]
-        28: Constriclaw [✔️]
-        29: Shockserpent [✔️]
-        30: Driftsnake [✔️]
-        31: Aquanake [✔️]
-        32: Flameserpent [✔️]
+        28: Constriclaw [✔️]print
         33: Leafadder [✔️]
         34: Iceviper [✔️]
         35: Rockpython [✔️]
@@ -311,7 +306,8 @@ class MonsterTeam:
             monster_index = int(input("Enter the index of the monster you would like on your team: "))
             if 1 <= monster_index <= 41 and monsters[monster_index - 1].can_be_spawned(): 
                 self.add_to_team(monsters[monster_index- 1]())
-                
+                self.monsters[self.team_increment_monsters] = monsters[monster_index- 1]()
+                self.team_increment_monsters += 1
                 team_size -= 1
             else:
                 print("Sorry, a monster with that index does not exist or cannot be spawned. Please enter another monster.")
@@ -321,17 +317,19 @@ class MonsterTeam:
         """
         Generates a team based on a list of already provided monster classes.
 
-        While the type hint imples the argument can be none, this method should never be c            self.team_increment = 0
+        While the type hint imples the argument can be none, this method should never be None
 
         Example team if in TeamMode.FRONT:
         [Gustwing Instance, Aquariuma Instance, Flamikin Instance]
         """
-        for i,monster in enumerate(provided_monsters):
-            if monster.can_be_spawned():
+        for monster in provided_monsters:
+            if monster.can_be_spawned() and self.monsters[5] == None:
                 self.add_to_team(monster())
-                self.monsters[i] = monster()
+                self.monsters[self.team_increment_monsters] = monster()
                 self.team_increment_monsters += 1
-
+            else:
+                raise ValueError("Too many monsters or a monster cannot be spawned")
+            
     def choose_action(self, currently_out: MonsterBase, enemy: MonsterBase) -> Battle.Action:
         # This is just a placeholder function that doesn't matter much for testing.
         from battle import Battle
@@ -339,17 +337,3 @@ class MonsterTeam:
             return Battle.Action.ATTACK
         return Battle.Action.SWAP
 
-if __name__ == "__main__":
-        from helpers import Flamikin, Aquariuma, Vineon, Normake, Thundrake, Rockodile, Mystifly, Strikeon, Faeboa, Soundcobra
-
-        my_monsters = ArrayR(4)
-        my_monsters[0] = Flamikin   # 6 HP
-        my_monsters[1] = Aquariuma  # 8 HP
-        my_monsters[2] = Rockodile  # 9 HP
-        my_monsters[3] = Thundrake  # 5 HP
-        team = MonsterTeam(
-            team_mode=MonsterTeam.TeamMode.OPTIMISE,
-            selection_mode=MonsterTeam.SelectionMode.PROVIDED,
-            sort_key=MonsterTeam.SortMode.HP,
-            provided_monsters=my_monsters,
-        )

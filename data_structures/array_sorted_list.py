@@ -36,9 +36,9 @@ class ArraySortedList(SortedList[T]):
             if possible (!). Shift the following elements to the right.
         """
         if self.is_empty() or \
-                (index == 0 and item.key <= self[index].key) or \
-                (index == len(self) and self[index - 1].key <= item.key) or \
-                (index > 0 and self[index - 1].key <= item.key <= self[index].key):
+                (index == 0 and item <= self[index]) or \
+                (index == len(self) and self[index - 1] <= item) or \
+                (index > 0 and self[index - 1] <= item <= self[index]):
 
             if self.is_full():
                 self._resize()
@@ -116,11 +116,47 @@ class ArraySortedList(SortedList[T]):
 
         while low <= high:
             mid = (low + high) // 2
-            if self[mid].key < item.key:
+            if self[mid] < item:
                 low = mid + 1
-            elif self[mid].key > item.key:
+            elif self[mid] > item:
                 high = mid - 1
             else:
                 return mid
 
         return low
+    
+def ArraySortedListForMonsterTeam(ArraySortedList):
+    def _index_to_add(self, item: ListItem, key: str) -> int:
+        """ Find the position where the new item should be placed. """
+        low = 0
+        high = len(self) - 1
+
+        while low <= high:
+            mid = (low + high) // 2
+            if self[mid] < item:
+                low = mid + 1
+            elif self[mid] > item:
+                high = mid - 1
+            else:
+                return mid
+
+        return low
+
+    def __setitem__(self, index: int, item: ListItem, key : str) -> None:
+        """ Magic method. Insert the item at a given position,
+            if possible (!). Shift the following elements to the right.
+        """
+        if self.is_empty() or \
+                (index == 0 and item <= self[index]) or \
+                (index == len(self) and self[index - 1] <= item) or \
+                (index > 0 and self[index - 1] <= item <= self[index]):
+
+            if self.is_full():
+                self._resize()
+
+            self._shuffle_right(index)
+            self.array[index] = item
+        else:
+            # the list isn't empty and the item's position is wrong wrt. its neighbours
+            raise IndexError('Element should be inserted in sorted order')
+        

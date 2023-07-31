@@ -29,7 +29,11 @@ class Battle:
         * remove fainted monsters and retrieve new ones.
         * return the battle result if completed.
         """
-        raise NotImplementedError
+        choice1 = input("Team 1, choose an action [ATTACK, SWAP, SPECIAL]: ").upper()
+        choice2 = input("Team 2, choose an action [ATTACK, SWAP, SPECIAL]: ").upper()
+
+        team1_self.process_actions(choice1, self.team1)
+        self.process_actions(choice2, self.team2)
 
     def battle(self, team1: MonsterTeam, team2: MonsterTeam) -> Battle.Result:
         if self.verbosity > 0:
@@ -45,6 +49,14 @@ class Battle:
             result = self.process_turn()
         # Add any postgame logic here.
         return result
+
+    def process_actions(self, choice, team):
+        if choice == "SPECIAL":
+            team.special()
+        elif choice == "SWAP":
+            team.retrieve_from_team()
+        elif choice == "ATTACK":
+            return choice
 
 if __name__ == "__main__":
     t1 = MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM)
