@@ -2,6 +2,8 @@ from __future__ import annotations
 import abc
 
 from stats import Stats
+import math 
+from elements import Element, EffectivenessCalculator
 
 class MonsterBase(abc.ABC):
 
@@ -12,10 +14,14 @@ class MonsterBase(abc.ABC):
         :simple_mode: Whether to use the simple or complex stats of this monster
         :level: The starting level of this monster. Defaults to 1.
         """
-        self.simple_mode = simple_mode
+        if simple_mode:
+            self.stats = self.get_simple_stats()
+        else:
+            self.stats = self.get_complex_stats()
+
         self.init_level = level
         self.curr_level = level
-        self.stats = self.get_simple_stats()
+        
         self.hp  = self.get_max_hp()
 
     def get_level(self):
@@ -24,7 +30,9 @@ class MonsterBase(abc.ABC):
 
     def level_up(self):
         """Increase the level of this monster instance by 1"""
+        prev_max_health = self.get_max_hp()
         self.curr_level += 1
+        self.set_hp(self.get_max_hp() - (prev_max_health - self.get_hp()))
 
     def get_hp(self):
         """Get the current HP of this monster instance"""
@@ -60,7 +68,15 @@ class MonsterBase(abc.ABC):
         # Step 2: Apply type effectiveness
         # Step 3: Ceil to int
         # Step 4: Lose HP
-        pass
+        self_element, other_element = Element.from_string(self.get_element()), Element.from_string(other.get_element())
+        element_multiplier = EffectivenessCalculator.get_effectiveness(self_element, other_element)
+        if other.get_defense() < self.get_attack() / 2:
+            damage = element_multiplier * (self.get_attack() - other.get_defense())
+        elif other.get_defense() < self.get_attack():
+            damage = element_multiplier * (5/8 * self.get_attack() - other.get_defense() / 4)
+        else:
+            damage = element_multiplier * self.get_attack() / 4
+        other.set_hp(other.get_hp() -  math.ceil(damage))
 
     def ready_to_evolve(self) -> bool:
         """Whether this monster is ready to evolve. See assignment spec for specific logic."""
