@@ -7,7 +7,10 @@ from battle import Battle
 from elements import Element
 
 from data_structures.referential_array import ArrayR
-from data_structures.queue_adt import Queue
+from data_structures.queue_adt import CircularQueue
+from data_structures.array_sorted_list import ArraySortedListWithKeys
+from data_structures.bset import BSet
+from data_structures.stack_adt import ArrayStack
 
 class BattleTower:
 
@@ -20,15 +23,19 @@ class BattleTower:
         self.player_lives = None
         self.enemy_teams = None
         self.enemy_lives = None
+        self.seen_elements = BSet(Element.STEEL.value) # The element Steel element is the last element and so hold the size
 
     def set_my_team(self, team: MonsterTeam) -> None:
         # Generate the team lives here too.
         self.player_team = team
         self.player_lives = RandomGen.randint(self.MIN_LIVES, self.MAX_LIVES)
+        #Elements in the player team will always be in the meta
+        self.process_elements(team)
+
 
     def generate_teams(self, n: int) -> None:
-        self.enemy_teams = Queue[MonsterTeam](n)
-        self.enemy_lives = Queue[MonsterTeam](n)
+        self.enemy_teams = CircularQueue[MonsterTeam](n)
+        self.enemy_lives = CircularQueue[MonsterTeam](n)
         for _ in range(n):
             self.enemy_teams.append(MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM))
             self.enemy_lives.append(RandomGen.randint(self.MIN_LIVES, self.MAX_LIVES))
@@ -38,6 +45,7 @@ class BattleTower:
 
     def next_battle(self) -> tuple[Battle.Result, MonsterTeam, MonsterTeam, int, int]:
         team_to_fight = self.enemy_teams.serve()
+        self.process_elements(team_to_fight)
         curr_enemy_team_lives = self.enemy_lives.serve()
         curr_battle = Battle(3)
         result = curr_battle.battle(self.player_team, team_to_fight)
@@ -49,32 +57,95 @@ class BattleTower:
             curr_enemy_team_lives -= 1
             self.player_lives -= 1
         
+        team_to_fight.regenerate_team()
+        self.player_team.regenerate_team()
+
         if curr_enemy_team_lives > 0:
-            team_to_fight.regenerate_team()
             self.enemy_teams.append(team_to_fight)
-        elif self.player_lives <= 0:
+            self.enemy_lives.append(curr_enemy_team_lives)
+        if self.player_lives <= 0:
             print("Player is out of lives")
-            exit()
-        return (result, , )
+
+        return (result, self.player_team.team.array.__str__(), team_to_fight.team.array.__str__(), self.player_lives, curr_enemy_team_lives)
+
+    def process_elements(self, team : MonsterTeam):
+        while not team.team.is_empty():
+            monster_element = Element.from_string(team.retrieve_from_team().get_element())
+            self.seen_elements.add(monster_element.value)
+        team.regenerate_team()
 
     def out_of_meta(self) -> ArrayR[Element]:
-        raise NotImplementedError
+        team_to_fight = self.enemy_teams.peek()
+        in_meta_elements = BSet(Element.STEEL.value)
+        while not team_to_fight.team.is_empty():
+            monster_element = Element.from_string(team_to_fight.retrieve_from_team().get_element())
+            if monster_element.value in self.seen_elements:
+                in_meta_elements.add(monster_element.value)
+                self.seen_elements.remove(monster_element.value)
+        while not self.player_team.team.is_empty():
+            monster_element = Element.from_string(self.player_team.retrieve_from_team().get_element())
+            if monster_element.value in self.seen_elements:
+                in_meta_elements.add(monster_element.value)
+                self.seen_elements.remove(monster_element.value)
+        team_to_fight.regenerate_team()
+        self.player_team.regenerate_team()
+        out_of_meta_elements = ArrayR[Element](len(self.seen_elements))
+        incrementor = 0
+
+        for item in range(1, int.bit_length(self.seen_elements.elems) + 1):
+            if item in self.seen_elements:
+                out_of_meta_elements[incrementor] = Element(item)
+                incrementor += 1
+        
+        self.seen_elements |= in_meta_elements
+        return out_of_meta_elements
+
 
     def sort_by_lives(self):
         # 1054 ONLY
-        raise NotImplementedError
+        for mark in range(len(self.enemy_teams)):
+            temp= self.enemy_teams[mark]
+            i = mark - 1
+            while i >= 0 and self.enemy_teams[i] > temp:
+                self.team[i + 1] = self.team[i]
+                i -= 1
+            self.team[i + 1] = temp
+
 
 def tournament_balanced(tournament_array: ArrayR[str]):
     # 1054 ONLY
-    raise NotImplementedError
+    print(len(tournament_array))
+    stack = ArrayStack[str](len(tournament_array))
+    i = 0
+    for i in range(len(tournament_array)):
+        top = tournament_array[i]
+        if top == "+":
+            try:
+                player1 = stack.pop()
+                player2 = stack.pop()
+                if len(player1.split("v")) != len(player2.split("v")):
+                    return False
+                stack.push(f"({player1} v {player2})")
+            except:
+                return False
+        else:
+            stack.push(top)
+    
+    return True
 
 if __name__ == "__main__":
 
-    RandomGen.set_seed(129371)
+    # RandomGen.set_seed(129371)
 
-    bt = BattleTower(Battle(verbosity=3))
-    bt.set_my_team(MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM))
-    bt.generate_teams(3)
+    # bt = BattleTower(Battle(verbosity=3))
+    # bt.set_my_team(MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM))
+    # bt.generate_teams(6)
+    # print(bt.next_battle())
+    # print(bt.out_of_meta())
 
-    for result, my_team, tower_team, player_lives, tower_lives in bt:
-        print(result, my_team, tower_team, player_lives, tower_lives)
+    unbalanced = ArrayR.from_list([
+            "a", "b", "+", "c", "d", "+", "+",
+            "e", "f", "+", "g", "h", "+", "+", "+"
+        ])
+    print(tournament_balanced(unbalanced))
+

@@ -10,7 +10,7 @@ from helpers import get_all_monsters
 from data_structures.referential_array import ArrayR
 from data_structures.queue_adt import CircularQueue
 from data_structures.stack_adt import ArrayStack
-from data_structures.array_sorted_list import ArraySortedList
+from data_structures.array_sorted_list import ArraySortedListWithKeys
 
 if TYPE_CHECKING:
     from battle import Battle
@@ -52,15 +52,13 @@ class MonsterTeam:
         elif team_mode == self.TeamMode.OPTIMISE:
             self.sort_mode = str(kwargs["sort_key"])[9:].lower()
             self.descending = True 
-            self.team_increment = 0
-            self.team = ArrayR[MonsterBase](6)  
+            # self.team_increment = 0
+            self.team = ArraySortedListWithKeys[MonsterBase](6)#ArrayR[MonsterBase](6)  
   
         else:
             raise ValueError(f"team_mode {team_mode} not supported.")
 
-        #We could use a set for the revive team
-        self.monsters = ArrayR[MonsterBase](6) #Keeping a track of the team for revival What do I do for revival :(
-        self.team_increment_monsters = 0
+        self.monsters = CircularQueue[MonsterBase](6) #Keeping a track of the team for revival What do I do for revival :(
         
         if selection_mode == self.SelectionMode.RANDOM:
             self.select_randomly(**kwargs)
@@ -78,12 +76,10 @@ class MonsterTeam:
         elif self.team_mode == self.TeamMode.BACK:
             self.team.append(monster)
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            if self.team[0] == None:
-                self.team[0] = monster
-                self.team_increment += 1
+            if self.descending:
+                self.team.add(monster, self.sort_mode)
             else:
-                #Use an insertion sort iteration once since we are sure the array is sorted
-                self.sort_for_optimise(self.team_increment, monster)
+                self.team.add(monster, self.sort_mode, False)
 
             
 
@@ -93,10 +89,7 @@ class MonsterTeam:
         elif self.team_mode == self.TeamMode.BACK:
             return self.team.serve()            
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            self.team_increment -= 1
-            monster_to_retrieve = self.team[0]
-            self.team._shuffle_left(0)
-            return monster_to_retrieve
+            return self.team.delete_at_index(0)
 
     def special(self) -> None:
 
@@ -122,55 +115,29 @@ class MonsterTeam:
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
             self.descending = not self.descending
-            self.sort_for_optimise()
+            temp_team = ArraySortedListWithKeys[MonsterBase](6)
+            for _ in range(len(self.team)):
+                temp_team.add(self.retrieve_from_team(), self.sort_mode, self.descending)
+            self.team= temp_team
+
 
     def regenerate_team(self) -> None:
-        i = 0
-        if self.team_mode == self.TeamMode.FRONT:
+
+        if self.team_mode == self.TeamMode.FRONT or self.team_mode == self.TeamMode.BACK:
             self.team.clear()
-            while self.monsters[i] != None:
-                self.team.push(self.monsters[i])
-                i += 1
-        elif self.team_mode == self.TeamMode.BACK:
-            self.team.clear()
-            while self.monsters[i] != None:
-                self.team.append(self.monsters[i])
-                i += 1     
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            self.team = ArrayR[MonsterBase](6)
-            self.team_increment = 0
+            self.team = ArraySortedListWithKeys[MonsterBase](6)
             self.descending = True
-            while self.monsters[i] != None:
-                self.add_to_team(self.monsters[i])
-                i += 1
 
-    def sort_for_optimise(self, sorted_up_to: int = 1, monster = None):
-        i = -1
-        if monster:
-            self.team[self.team_increment] = monster
-            self.team_increment += 1
-        if self.descending:
-            for mark in range(sorted_up_to, self.team_increment):
-                temp = self.team[mark]
-                i = mark - 1
-                while i >= 0 and eval(f"self.team[i].get_{self.sort_mode}() < temp.get_{self.sort_mode}()"):
-                    self.team[i + 1] = self.team[i]
-                    i -= 1
-                self.team[i + 1] = temp
-        else:
-            for mark in range(sorted_up_to, self.team_increment):
-                temp = self.team[mark]
-                i = mark - 1
-                while i >= 0 and eval(f"self.team[i].get_{self.sort_mode}() > temp.get_{self.sort_mode}()"):
-                    self.team[i + 1] = self.team[i]
-                    i -= 1
-                self.team[i + 1] = temp
+        for _ in range(len(self.monsters)):
+                monster = self.monsters.serve()
+                self.add_to_team(monster)
+                self.monsters.append(monster)
 
     def select_randomly(self):
         team_size = RandomGen.randint(1, self.TEAM_LIMIT)
         monsters = get_all_monsters()
-        print(monsters[0].get_name())
         n_spawnable = 0
         for x in range(len(monsters)):
             if monsters[x].can_be_spawned():
@@ -184,10 +151,8 @@ class MonsterTeam:
                     cur_index += 1
                     if cur_index == spawner_index:
                         # Spawn this monster
-                        print(monsters[x])
                         self.add_to_team(monsters[x]())
-                        self.monsters[self.team_increment_monsters] = monsters[x]()
-                        self.team_increment_monsters += 1
+                        self.monsters.append(monsters[x]())
                         break
             else:
                 raise ValueError("Spawning logic failed.")
@@ -306,8 +271,7 @@ class MonsterTeam:
             monster_index = int(input("Enter the index of the monster you would like on your team: "))
             if 1 <= monster_index <= 41 and monsters[monster_index - 1].can_be_spawned(): 
                 self.add_to_team(monsters[monster_index- 1]())
-                self.monsters[self.team_increment_monsters] = monsters[monster_index- 1]()
-                self.team_increment_monsters += 1
+                self.monsters.append(monsters[monster_index- 1]())
                 team_size -= 1
             else:
                 print("Sorry, a monster with that index does not exist or cannot be spawned. Please enter another monster.")
@@ -323,10 +287,9 @@ class MonsterTeam:
         [Gustwing Instance, Aquariuma Instance, Flamikin Instance]
         """
         for monster in provided_monsters:
-            if monster.can_be_spawned() and self.monsters[5] == None:
+            if monster.can_be_spawned() and not self.team.is_full():
                 self.add_to_team(monster())
-                self.monsters[self.team_increment_monsters] = monster()
-                self.team_increment_monsters += 1
+                self.monsters.append(monster())
             else:
                 raise ValueError("Too many monsters or a monster cannot be spawned")
             

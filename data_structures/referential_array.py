@@ -37,7 +37,6 @@ class ArrayR(Generic[T]):
             raise ValueError("Array length should be larger than or equal to 0.")
         self.array = (length * py_object)()  # initialises the space
         self.array[:] = [None for _ in range(length)]
-        self.length = 0
 
 
     def __len__(self) -> int:
@@ -105,3 +104,9 @@ class ArrayR(Generic[T]):
         """ Shuffle items starting at a given position to the left. """
         for i in range(index, len(self) - 1):
             self.array[i] = self.array[i + 1]
+
+    def is_empty(self):
+        for elem in self:
+            if elem is not None:
+                return False
+        return True

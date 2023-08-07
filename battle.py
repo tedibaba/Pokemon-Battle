@@ -36,8 +36,6 @@ class Battle:
         * remove fainted monsters and retrieve new ones.
         * return the battle result if completed.
         """
-        # choice1 = input("Team 1, choose an action [ATTACK, SWAP, SPECIAL]: ").upper()
-        # choice2 = input("Team 2, choose an action [ATTACK, SWAP, SPECIAL]: ").upper()
         choice1 = self.team1.choose_action
         choice2 = self.team2.choose_action
 
@@ -54,30 +52,28 @@ class Battle:
             self.out2 = self.team2.retrieve_from_team()
             self.team2.add_to_team(temp)
 
- 
-
         first_monster_killed = False
         second_monster_killed = False                                     
 
         if choice1 == self.Action.ATTACK and choice2 == self.Action.ATTACK:
             if self.out1.get_speed () > self.out2.get_speed():
                 self.out1.attack(self.out2)
-                second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1, False)
+                second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1)
 
                 #It cant retaliate if it just died
                 if not second_monster_killed:
                     self.out2.attack(self.out1)
-                    first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2,False)
+                    first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2)
                 
 
             elif self.out1.get_speed () < self.out2.get_speed():
                 self.out2.attack(self.out1)
-                first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2, False)
+                first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2)
                 
                 if not first_monster_killed:
                     self.out1.attack(self.out2)
 
-                    second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1, False)
+                    second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1)
                     
 
             else: #The equal logic will not be able to follow the structure in process_post_attack() due to this being the only way for a draw to occur
@@ -90,12 +86,12 @@ class Battle:
 
         elif choice2 == self.Action.ATTACK:
             self.out2.attack(self.out1)
-            first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2,False)
+            first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2)
 
             
         elif choice1 == self.Action.ATTACK:
             self.out1.attack(self.out2)
-            second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1, False)
+            second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1)
 
         if not first_monster_killed and not second_monster_killed: #If neither monster dies, we must decrement their health by 1
             self.out2.set_hp(self.out2.get_hp() - 1)
@@ -106,7 +102,7 @@ class Battle:
         self.monster1_died = False
         self.monster2_died = False
 
-    def process_post_attack(self, attacked_monster, team, team_num, attacking_monster, use_draw_logic):
+    def process_post_attack(self, attacked_monster, team, team_num, attacking_monster, use_draw_logic = False):
 
         if attacked_monster.get_hp() <= 0:
             
@@ -144,17 +140,6 @@ class Battle:
             return True #This only happens when a monster died, in which case the other monster should not be allowed to attack
         return False
 
-    # def calculate_attack(self, monster1, monster2):
-    #     monster1_element, monster2_element = Element.from_string(monster1.get_element()), Element.from_string(monster2.get_element())
-    #     element_multiplier = EffectivenessCalculator.get_effectiveness(monster1_element, monster2_element)
-    #     if monster2.get_defense() < monster1.get_attack() / 2:
-    #         damage = element_multiplier * (monster1.get_attack() - monster2.get_defense())
-    #     elif monster2.get_defense() < monster1.get_attack():
-    #         damage = element_multiplier * (5/8 * monster1.get_attack() - monster2.get_defense() / 4)
-    #     else:
-    #         damage = element_multiplier * monster1.get_attack() / 4
-    #     return math.ceil(damage)
-
     def battle(self, team1: MonsterTeam, team2: MonsterTeam) -> Battle.Result:
         EffectivenessCalculator.make_singleton()
         if self.verbosity > 0:
@@ -169,13 +154,6 @@ class Battle:
             print(self.out1, self.out2)
             self.process_turn()
        
-        # # Add any postgame logic here.
-        # if self.result == self.Result.TEAM1:
-        #     print("Team 1 won")
-        # elif self.result == self.Result.TEAM2:
-        #     print("Team 2 won")
-        # elif self.result == self.Result.DRAW:
-        #     print("Draw")
         return self.result
 
 

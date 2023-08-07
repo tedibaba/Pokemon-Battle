@@ -3,7 +3,7 @@ import math
 
 from data_structures.referential_array import ArrayR
 from data_structures.stack_adt import ArrayStack
-from data_structures.array_sorted_list import ArraySortedList
+from data_structures.array_sorted_list import ArraySortedListWithoutKeys
 from data_structures.queue_adt import CircularQueue
 
 class Stats(abc.ABC):
@@ -95,7 +95,7 @@ class ComplexStats(Stats):
                     b= stack.pop()
                     if top == "middle":
                         c = stack.pop()
-                        sorted_list = ArraySortedList[int](3)
+                        sorted_list = ArraySortedListWithoutKeys[int](3)
                         sorted_list.add(float(a))
                         sorted_list.add(float(b))
                         sorted_list.add(float(c))

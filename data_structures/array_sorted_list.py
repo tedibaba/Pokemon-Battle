@@ -36,9 +36,9 @@ class ArraySortedList(SortedList[T]):
             if possible (!). Shift the following elements to the right.
         """
         if self.is_empty() or \
-                (index == 0 and item <= self[index]) or \
-                (index == len(self) and self[index - 1] <= item) or \
-                (index > 0 and self[index - 1] <= item <= self[index]):
+                (index == 0 and item.key <= self[index].key) or \
+                (index == len(self) and self[index - 1].key <= item.key) or \
+                (index > 0 and self[index - 1].key <= item.key <= self[index].key):
 
             if self.is_full():
                 self._resize()
@@ -116,17 +116,90 @@ class ArraySortedList(SortedList[T]):
 
         while low <= high:
             mid = (low + high) // 2
-            if self[mid] < item:
+            if self[mid].key < item.key:
                 low = mid + 1
-            elif self[mid] > item:
+            elif self[mid].key > item.key:
                 high = mid - 1
             else:
                 return mid
 
         return low
     
-def ArraySortedListForMonsterTeam(ArraySortedList):
-    def _index_to_add(self, item: ListItem, key: str) -> int:
+
+class ArraySortedListWithKeys(ArraySortedList[T]):
+    def _index_to_add(self, item: ListItem, key: str, descending : bool = True) -> int:
+        """ Find the position where the new item should be placed. """
+        if not descending:
+            low = 0
+            high = len(self) - 1
+            while low <= high:
+                mid = (low + high) // 2
+                if getattr(self[mid], key) < getattr(item, key):
+                    low = mid + 1
+                elif getattr(self[mid], key) > getattr(item, key):
+                    high = mid - 1
+                else:
+                    return mid
+        else:
+            low = 0
+            high = len(self) - 1
+            while low <= high:
+                mid = (low + high) // 2
+                if getattr(self[mid], key) < getattr(item, key):
+                    high = mid - 1
+                elif getattr(self[mid], key) > getattr(item, key):
+                    low = mid + 1
+                else:
+                    return mid
+
+        return low
+        
+    def add(self, item: ListItem, key: str, descending : bool = True) -> None:
+        """ Add new element to the list. """
+        if self.is_full():
+            self._resize()
+
+        # find where to place it
+        position = self._index_to_add(item, key, descending)
+
+        self.__setitem__(position, item, key, descending)
+        self.length += 1
+
+    def __setitem__(self, index: int, item: ListItem, key: str, descending: bool = True) -> None:
+        """ Magic method. Insert the item at a given position,
+            if possible (!). Shift the following elements to the right.
+        """
+        if descending:
+            if self.is_empty() or \
+            (index == 0 and getattr(item, key) >= getattr(self[index], key)) or \
+            (index == len(self) and getattr(self[index - 1], key) >= getattr(item, key)) or \
+            (index > 0 and getattr(self[index - 1], key) >= getattr(item, key) >= getattr(self[index], key)):
+                if self.is_full():
+                    self._resize()
+
+                self._shuffle_right(index)
+                self.array[index] = item
+            else:
+                # the list isn't empty and the item's position is wrong wrt. its neighbours
+                raise IndexError('Element should be inserted in sorted order')
+        else:
+            if self.is_empty() or \
+                    (index == 0 and getattr(item, key) <= getattr(self[index], key)) or \
+                    (index == len(self) and getattr(self[index - 1], key) <= getattr(item, key)) or \
+                    (index > 0 and getattr(self[index - 1], key) <= getattr(item, key) <= getattr(self[index], key)):
+
+                if self.is_full():
+                    self._resize()
+
+                self._shuffle_right(index)
+                self.array[index] = item
+            else:
+                # the list isn't empty and the item's position is wrong wrt. its neighbours
+                raise IndexError('Element should be inserted in sorted order')
+        
+
+class ArraySortedListWithoutKeys(ArraySortedList[T]):    
+    def _index_to_add(self, item: ListItem) -> int:
         """ Find the position where the new item should be placed. """
         low = 0
         high = len(self) - 1
@@ -135,14 +208,26 @@ def ArraySortedListForMonsterTeam(ArraySortedList):
             mid = (low + high) // 2
             if self[mid] < item:
                 low = mid + 1
-            elif self[mid] > item:
+            elif self[mid]> item:
                 high = mid - 1
             else:
                 return mid
 
         return low
 
-    def __setitem__(self, index: int, item: ListItem, key : str) -> None:
+        
+    def add(self, item: ListItem) -> None:
+        """ Add new element to the list. """
+        if self.is_full():
+            self._resize()
+
+        # find where to place it
+        position = self._index_to_add(item)
+
+        self[position] = item
+        self.length += 1
+
+    def __setitem__(self, index: int, item: ListItem) -> None:
         """ Magic method. Insert the item at a given position,
             if possible (!). Shift the following elements to the right.
         """
@@ -159,4 +244,3 @@ def ArraySortedListForMonsterTeam(ArraySortedList):
         else:
             # the list isn't empty and the item's position is wrong wrt. its neighbours
             raise IndexError('Element should be inserted in sorted order')
-        
