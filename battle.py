@@ -96,8 +96,10 @@ class Battle:
         if not first_monster_killed and not second_monster_killed: #If neither monster dies, we must decrement their health by 1
             self.out2.set_hp(self.out2.get_hp() - 1)
             self.out1.set_hp(self.out1.get_hp() - 1)
-            self.process_post_attack(self.out2, self.team2, 2, self.out1, True)
-            self.process_post_attack(self.out1, self.team1, 1, self.out2, True)
+            monster1 = self.out1
+            monster2 = self.out2
+            self.process_post_attack(monster2, self.team2, 2, monster1, True)
+            self.process_post_attack(monster1, self.team1, 1, monster2, True)
         
         self.monster1_died = False
         self.monster2_died = False
@@ -123,18 +125,19 @@ class Battle:
                     self.monster2_died = 1
                     self.out2 = team.retrieve_from_team()
 
-            attacking_monster.level_up()
-            if attacking_monster.ready_to_evolve():
-                if not use_draw_logic:
-                    if team_num == 1:
-                        self.out2 = attacking_monster.evolve() 
-                    elif team_num == 2: 
-                        self.out1 = attacking_monster.evolve()    
-                else:
-                    if team_num == 1 and not self.monster2_died and self.out2.get_hp():
-                        self.out2 = attacking_monster.evolve() 
-                    elif team_num == 2 and not self.monster1_died and self.out1.get_hp(): 
-                        self.out1 = attacking_monster.evolve()
+            if attacking_monster.get_hp():
+                attacking_monster.level_up()
+                if attacking_monster.ready_to_evolve():
+                    if not use_draw_logic:
+                        if team_num == 1:
+                            self.out2 = attacking_monster.evolve() 
+                        elif team_num == 2: 
+                            self.out1 = attacking_monster.evolve()    
+                    else:
+                        if team_num == 1 and not self.monster2_died and attacking_monster.get_hp():
+                            self.out2 = attacking_monster.evolve() 
+                        elif team_num == 2 and not self.monster1_died and attacking_monster.get_hp(): 
+                            self.out1 = attacking_monster.evolve()
             
 
             return True #This only happens when a monster died, in which case the other monster should not be allowed to attack

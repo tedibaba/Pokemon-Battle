@@ -4,13 +4,14 @@ from random_gen import RandomGen
 from team import MonsterTeam
 from battle import Battle
 
-from elements import Element
+from elements import Element, EffectivenessCalculator
 
-from data_structures.referential_array import ArrayR
+from data_structures.referential_array import ArrayR, ArrayRList
 from data_structures.queue_adt import CircularQueue
 from data_structures.array_sorted_list import ArraySortedListWithKeys
 from data_structures.bset import BSet
 from data_structures.stack_adt import ArrayStack
+from helpers import Flamikin, Faeboa
 
 class BattleTower:
 
@@ -23,7 +24,8 @@ class BattleTower:
         self.player_lives = None
         self.enemy_teams = None
         self.enemy_lives = None
-        self.seen_elements = BSet(Element.STEEL.value) # The element Steel element is the last element and so hold the size
+        EffectivenessCalculator.make_singleton()
+        self.seen_elements = BSet(len(EffectivenessCalculator.instance.element_names)) # The element Steel element is the last element and so hold the size
 
     def set_my_team(self, team: MonsterTeam) -> None:
         # Generate the team lives here too.
@@ -34,11 +36,11 @@ class BattleTower:
 
 
     def generate_teams(self, n: int) -> None:
-        self.enemy_teams = CircularQueue[MonsterTeam](n)
-        self.enemy_lives = CircularQueue[MonsterTeam](n)
+        self.enemy_teams = ArrayRList[MonsterTeam](n)
+        self.enemy_lives = ArrayRList[MonsterTeam](n)
         for _ in range(n):
-            self.enemy_teams.append(MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM))
-            self.enemy_lives.append(RandomGen.randint(self.MIN_LIVES, self.MAX_LIVES))
+            self.enemy_teams.add(MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM))
+            self.enemy_lives.add(RandomGen.randint(self.MIN_LIVES, self.MAX_LIVES))
 
     def battles_remaining(self) -> bool:
         return self.player_lives > 0 and not self.enemy_lives.is_empty()
@@ -60,12 +62,15 @@ class BattleTower:
         team_to_fight.regenerate_team()
         self.player_team.regenerate_team()
 
+        self.enemy_teams._shuffle_left()
+        self.enemy_lives._shuffle_left()
+   
         if curr_enemy_team_lives > 0:
-            self.enemy_teams.append(team_to_fight)
-            self.enemy_lives.append(curr_enemy_team_lives)
+            self.enemy_teams.add(team_to_fight)
+            self.enemy_lives.add(curr_enemy_team_lives)
         if self.player_lives <= 0:
             print("Player is out of lives")
-
+       
         return (result, self.player_team.team.array.__str__(), team_to_fight.team.array.__str__(), self.player_lives, curr_enemy_team_lives)
 
     def process_elements(self, team : MonsterTeam):
@@ -75,8 +80,8 @@ class BattleTower:
         team.regenerate_team()
 
     def out_of_meta(self) -> ArrayR[Element]:
-        team_to_fight = self.enemy_teams.peek()
-        in_meta_elements = BSet(Element.STEEL.value)
+        team_to_fight = self.enemy_teams[0]
+        in_meta_elements = BSet(len(EffectivenessCalculator.instance.element_names))
         while not team_to_fight.team.is_empty():
             monster_element = Element.from_string(team_to_fight.retrieve_from_team().get_element())
             if monster_element.value in self.seen_elements:
@@ -135,17 +140,26 @@ def tournament_balanced(tournament_array: ArrayR[str]):
 
 if __name__ == "__main__":
 
-    # RandomGen.set_seed(129371)
-
-    # bt = BattleTower(Battle(verbosity=3))
-    # bt.set_my_team(MonsterTeam(MonsterTeam.TeamMode.BACK, MonsterTeam.SelectionMode.RANDOM))
-    # bt.generate_teams(6)
-    # print(bt.next_battle())
-    # print(bt.out_of_meta())
-
-    unbalanced = ArrayR.from_list([
-            "a", "b", "+", "c", "d", "+", "+",
-            "e", "f", "+", "g", "h", "+", "+", "+"
-        ])
-    print(tournament_balanced(unbalanced))
+        RandomGen.set_seed(123456789)
+        bt = BattleTower(Battle(verbosity=0))
+        bt.set_my_team(MonsterTeam(
+            team_mode=MonsterTeam.TeamMode.BACK,
+            selection_mode=MonsterTeam.SelectionMode.PROVIDED,
+            provided_monsters=ArrayR.from_list([Faeboa])
+        ))
+        bt.generate_teams(3)
+        print(bt.out_of_meta())
+        bt.next_battle()
+        print(bt.out_of_meta())
+        bt.next_battle()
+        print(bt.out_of_meta())
+        bt.next_battle()
+        print(bt.out_of_meta())
+        bt.next_battle()
+        print(bt.out_of_meta())
+    # unbalanced = ArrayR.from_list([
+    #         "a", "b", "+", "c", "d", "+", "+",
+    #         "e", "f", "+", "g", "h", "+", "+", "+"
+    #     ])
+    # print(tournament_balanced(unbalanced))
 

@@ -100,13 +100,34 @@ class ArrayR(Generic[T]):
         return False
     
 
-    def _shuffle_left(self, index: int) -> None:
+
+class ArrayRList(ArrayR[T]):
+
+    def __init__(self, length : int):
+        super().__init__(length)
+        self.filled_length = 0
+
+    def _shuffle_left(self) -> None:
         """ Shuffle items starting at a given position to the left. """
-        for i in range(index, len(self) - 1):
+        for i in range(self.filled_length ):
             self.array[i] = self.array[i + 1]
+        self.array[self.filled_length] = None
 
     def is_empty(self):
         for elem in self:
             if elem is not None:
                 return False
         return True
+    
+    def add(self, elem):
+        self.array[self.filled_length] = elem
+        self.filled_length += 1
+
+    def serve(self) -> T:
+        item = self.array[0]
+        self.filled_length -= 1
+        # self._shuffle_left()
+        # print(self.array[:])
+        return item
+
+    

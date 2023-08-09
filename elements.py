@@ -74,6 +74,8 @@ class EffectivenessCalculator:
         Fire is half effective to Fire and Water, and double effective to Grass [0.5, 0.5, 2]
         Water is double effective to Fire, and half effective to Water and Grass [2, 0.5, 0.5]
         Grass is half effective to Fire and Grass, and double effective to Water [0.5, 2, 0.5]
+
+        :complexity: O(1) for both worst/best case
         """
         self.element_names = element_names
         self.effectiveness_values = effectiveness_values
@@ -84,6 +86,9 @@ class EffectivenessCalculator:
         Returns the effectivness of elem1 attacking elem2.
 
         Example: EffectivenessCalculator.get_effectiveness(Element.FIRE, Element.WATER) == 0.5
+
+        :complexity: O(l * c==) best case and O(l* n * c==) worst case 
+        where l is the number of letters in the longer element name, n is the number of elements and c== is the cost of comparing items
         """
 
         row = cls.instance.element_names.index(type1.name.capitalize())

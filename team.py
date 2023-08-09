@@ -84,6 +84,12 @@ class MonsterTeam:
             
 
     def retrieve_from_team(self) -> MonsterBase:
+        """
+        Retrieves the next monster in the team.
+
+        :returns: A monster object
+        :complexity: O(1) both worst/best case
+        """
         if self.team_mode == self.TeamMode.FRONT:
             return self.team.pop()
         elif self.team_mode == self.TeamMode.BACK:
@@ -132,6 +138,7 @@ class MonsterTeam:
 
         for _ in range(len(self.monsters)):
                 monster = self.monsters.serve()
+                monster.set_hp(monster.get_max_hp())
                 self.add_to_team(monster)
                 self.monsters.append(monster)
 
@@ -259,29 +266,32 @@ class MonsterTeam:
         """
         while True:
             try:
-                team_size = int(input("Enter the number of monsters on your team: "))
+                team_size = int(input("Enter the number of monsters on your team (between 1 and 6): "))
                 if 1 <= team_size <= 6:
                     break
                 print("Please enter a number between 1 and 6.")
             except:
-                print("Please enter a number between 1 and 6.")
+                print("Please enter a number. It must be between 1 and 6.")
         monsters = get_all_monsters()
         while team_size > 0:
-            
-            monster_index = int(input("Enter the index of the monster you would like on your team: "))
-            if 1 <= monster_index <= 41 and monsters[monster_index - 1].can_be_spawned(): 
-                self.add_to_team(monsters[monster_index- 1]())
-                self.monsters.append(monsters[monster_index- 1]())
-                team_size -= 1
-            else:
-                print("Sorry, a monster with that index does not exist or cannot be spawned. Please enter another monster.")
-
+            try:
+                monster_index = int(input("Enter the index of the monster you would like on your team (between 1 and 41): "))
+                if 1 <= monster_index <= 41 and monsters[monster_index - 1].can_be_spawned(): 
+                    self.add_to_team(monsters[monster_index- 1]())
+                    self.monsters.append(monsters[monster_index- 1]())
+                    team_size -= 1
+                else:
+                    print("Sorry, a monster with that index does not exist or cannot be spawned. Please enter another monster index between 1 and 41.")
+            except:
+                print("Sorry, please enter a number. It must be between 1 and 41")
 
     def select_provided(self, provided_monsters:Optional[ArrayR[type[MonsterBase]]]=None, **kwargs):
         """
         Generates a team based on a list of already provided monster classes.
 
         While the type hint imples the argument can be none, this method should never be None
+
+        :complexity: 
 
         Example team if in TeamMode.FRONT:
         [Gustwing Instance, Aquariuma Instance, Flamikin Instance]

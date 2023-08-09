@@ -248,7 +248,7 @@ class TestTower(TestCase):
         invalid1 = ArrayR.from_list(["T1", "T2", "+", "+"])
         invalid2 = ArrayR.from_list(["T1", "T2"])
         balanced = ArrayR.from_list([
-            "a", "b", "+", "c", "d", z"+", "+",
+            "a", "b", "+", "c", "d", "+", "+",
             "e", "f", "+", "g", "h", "+", "+", "+"
         ])
         self.assertFalse(tournament_balanced(invalid1))
