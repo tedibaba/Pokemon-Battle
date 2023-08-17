@@ -172,7 +172,6 @@ class TestTower(TestCase):
 
     @number("5.4")
     @visibility(visibility.VISIBILITY_SHOW)
-    @advanced()
     @timeout()
     def test_sorting_teams(self):
         # Now give us an overpowered team so we can test the enemy losing lives.
@@ -228,7 +227,6 @@ class TestTower(TestCase):
 
     @number("5.5")
     @visibility(visibility.VISIBILITY_SHOW)
-    @advanced()
     @timeout()
     def test_tournament(self):
         # Test a few tournament strings

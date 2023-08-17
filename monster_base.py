@@ -14,6 +14,7 @@ class MonsterBase(abc.ABC):
         :simple_mode: Whether to use the simple or complex stats of this monster
         :level: The starting level of this monster. Defaults to 1.
         """
+        self.simple_mode = simple_mode
         if simple_mode:
             self.stats = self.get_simple_stats()
         else:
@@ -22,7 +23,7 @@ class MonsterBase(abc.ABC):
         self.init_level = level
         self.curr_level = level
         
-        self.hp  = self.get_max_hp()
+        self.hp  = self.get_max_hp() # A monster spawns with its max hp
 
     def get_level(self):
         """The current level of this monster instance"""
@@ -63,7 +64,13 @@ class MonsterBase(abc.ABC):
         return self.hp > 0
 
     def attack(self, other: MonsterBase):
-        """Attack another monster instance"""
+        """Attack another monster instance
+        
+        :complexity: O(l + n * c==) worst case and O(l + c==) best case 
+        where l is the number of letters in the longest element name,
+        n is the number of elements and c== is the cost of comparison.
+
+        """
         # Step 1: Compute attack stat vs. defense stat
         # Step 2: Apply type effectiveness
         # Step 3: Ceil to int
@@ -82,11 +89,10 @@ class MonsterBase(abc.ABC):
         """Whether this monster is ready to evolve. See assignment spec for specific logic."""
         return True if self.curr_level > self.init_level and self.get_evolution() else False
             
-
     def evolve(self) -> MonsterBase:
         """Evolve this monster instance by returning a new instance of a monster class."""
-        evolution =  (self.get_evolution())(level = self.curr_level)
-        evolution.set_hp(evolution.get_hp() - (self.get_max_hp() - self.get_hp()))
+        evolution =  (self.get_evolution())(self.simple_mode, self.curr_level)
+        evolution.set_hp(evolution.get_max_hp() - (self.get_max_hp() - self.get_hp()))
         return evolution
     
     def __str__(self) -> str:

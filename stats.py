@@ -27,10 +27,7 @@ class Stats(abc.ABC):
 
 class SimpleStats(Stats):
      
-
     def __init__(self, attack, defense, speed, max_hp) -> None:
-        # TODO: Implement
-        pass
         self.attack = attack
         self.defense = defense
         self.speed = speed
@@ -50,6 +47,10 @@ class SimpleStats(Stats):
 
 class ComplexStats(Stats):
 
+    """Unless otherwise stated, the complexity of each of the methods in the class are O(n) 
+    where n is the number of elements in the given formula.
+    """
+
     def __init__(
         self,
         attack_formula: ArrayR[str],
@@ -57,63 +58,84 @@ class ComplexStats(Stats):
         speed_formula: ArrayR[str],
         max_hp_formula: ArrayR[str],
     ) -> None:
-        self.attack_formula = self.process_into_stack(attack_formula)
-        self.defense_formula = self.process_into_stack(defense_formula)
-        self.speed_formula = self.process_into_stack(speed_formula)
-        self.max_hp_formula = self.process_into_stack(max_hp_formula)
+        self.attack_formula = attack_formula
+        self.defense_formula = defense_formula
+        self.speed_formula = speed_formula
+        self.max_hp_formula = max_hp_formula
 
 
     def get_attack(self, level: int):
+        """
+        Returns the attack of the monster using its complex stats
+
+        :param level: The level of the monster
+        """
         return self.calculate(self.attack_formula, level)
-                 
 
     def get_defense(self, level: int):
+        """
+        Returns the defense of the monster using its complex stats
+
+        :param level: The level of the monster
+        """
         return self.calculate(self.defense_formula, level)
 
     def get_speed(self, level: int):
+        """
+        Returns the speed of the monster using its complex stats
+
+        :param level: The level of the monster
+        """
         return self.calculate(self.speed_formula, level)
 
     def get_max_hp(self, level: int):
+        """
+        Returns the max hp of the monster using its complex stats
+
+        :param level: The level of the monster
+        """
         return self.calculate(self.max_hp_formula, level)
     
-    def calculate(self, formula : ArrayR[str], level: int):
+    def calculate(self, formula : ArrayR[str], level: int) -> int:
+        """
+        Calculates the formula given in reverse polish notation
+
+        :param formula: An array containing the reverse polish notation for the equation
+        :param level: The level of the monster
+        :return: An integer representing the final result of calculating the formula
+        :complexity: O(n) both best/worst case where n is the number of elements in the formula
+        """
+        
         stack = ArrayStack[str](len(formula))
         operations = ["+", "-", '*', '/', 'power', "sqrt", "middle"] #Cannot use Array like this 
-        while not formula.is_empty():
-            top = formula.serve()
-            if top not in operations:
-                if top == "level":
-                    stack.push(level)
-                else:
-                    stack.push(top) 
-            else:
-                if top == "sqrt":
-                    a = stack.pop()
-                    stack.push(math.sqrt(float(a)))
-                else:
-                    a = stack.pop()
-                    b= stack.pop()
-                    if top == "middle":
-                        c = stack.pop()
-                        sorted_list = ArraySortedListWithoutKeys[int](3)
-                        sorted_list.add(float(a))
-                        sorted_list.add(float(b))
-                        sorted_list.add(float(c))
-                        stack.push(str(sorted_list[1]))
+        for i in range (len(formula)):
+            if formula[i] != None:
+                top = formula[i]
+                if top not in operations:
+                    if top == "level":
+                        stack.push(level)
                     else:
-                        if top == "power":
-                            top = "**" 
-                        expr = f"float({b}) {top} float({a})"
-                        stack.push(str(eval(expr)))
+                        stack.push(top) 
+                else:
+                    if top == "sqrt":
+                        a = stack.pop()
+                        stack.push(math.sqrt(float(a)))
+                    else:
+                        a = stack.pop()
+                        b= stack.pop()
+                        if top == "middle":
+                            c = stack.pop()
+                            sorted_list = ArraySortedListWithoutKeys[int](3)
+                            sorted_list.add(float(a))
+                            sorted_list.add(float(b))
+                            sorted_list.add(float(c))
+                            stack.push(str(sorted_list[1]))
+                        else:
+                            if top == "power":
+                                top = "**" 
+                            expr = f"float({b}) {top} float({a})"
+                            stack.push(str(eval(expr)))
         return int(float((stack.pop())))
-
-    @classmethod
-    def process_into_stack(cls, formula: ArrayR[str]) -> ArrayStack[str]:
-        
-        formula_stack = CircularQueue[str](len(formula))
-        for i in formula:
-            formula_stack.append(i)
-        return formula_stack
 
 def test_complex_stats():
     cs = ComplexStats(
@@ -148,6 +170,9 @@ def test_complex_stats():
             "middle",
         ]),
     )
-    cs.get_speed(5)
+    print(cs.get_speed(5))
+    print(cs.get_defense(1))
+    print(cs.get_max_hp(41))
+    print(cs.get_attack(1))
 
-test_complex_stats()
+# test_complex_stats()

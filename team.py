@@ -10,7 +10,11 @@ from helpers import get_all_monsters
 from data_structures.referential_array import ArrayR
 from data_structures.queue_adt import CircularQueue
 from data_structures.stack_adt import ArrayStack
-from data_structures.array_sorted_list import ArraySortedListWithKeys
+from data_structures.array_sorted_list import ArraySortedListWithKeys, ArraySortedList
+from data_structures.sorted_list_adt import ListItem
+
+from helpers import Flamikin, Aquariuma, Vineon, Normake, Thundrake, Rockodile, Mystifly, Strikeon, Faeboa, Soundcobra
+
 
 if TYPE_CHECKING:
     from battle import Battle
@@ -39,26 +43,56 @@ class MonsterTeam:
 
     TEAM_LIMIT = 6
 
+    def mapping(self, monster : MonsterBase, sort_mode : SortMode):
+        """
+        Returns a value which will be used as the key in the ListItem objecct
+
+        :param monster: The monster from which we want to get the value from
+        :para sort_mode: The attribute that the monsters will be sorted with reference to
+
+        :complexity: O(1)
+        """
+
+        if sort_mode == self.SortMode.HP:
+            return monster.get_hp()
+        elif sort_mode == self.SortMode.ATTACK:
+            return monster.get_attack()
+        elif sort_mode == self.SortMode.DEFENSE:
+            return monster.get_defense()
+        elif sort_mode == self.SortMode.SPEED:
+            return monster.get_speed()
+        elif sort_mode == self.SortMode.LEVEL:
+            return monster.get_level()
+        
+        
+
     def __init__(self, team_mode: TeamMode, selection_mode, **kwargs) -> None:
         # Add any preinit logic here.
+        """
+        :complexity: O(n+m) in both best case 
+                     O(n + mlog(m)) in worst case
+        
+        where n is the size of the team
+        and m is the number of monsters to be added
+        """
         self.team_mode = team_mode
+        self.lives = 1
 
         if team_mode == self.TeamMode.FRONT:
-            self.team = ArrayStack[MonsterBase](6)
+            self.team = ArrayStack[MonsterBase](self.TEAM_LIMIT)
             
         elif team_mode == self.TeamMode.BACK:
-            self.team = CircularQueue[MonsterBase](6)
+            self.team = CircularQueue[MonsterBase](self.TEAM_LIMIT)
 
         elif team_mode == self.TeamMode.OPTIMISE:
-            self.sort_mode = str(kwargs["sort_key"])[9:].lower()
+            self.sort_mode = kwargs.get('sort_key')
             self.descending = True 
-            # self.team_increment = 0
-            self.team = ArraySortedListWithKeys[MonsterBase](6)#ArrayR[MonsterBase](6)  
+            self.team = ArraySortedListWithKeys(self.TEAM_LIMIT) 
   
         else:
             raise ValueError(f"team_mode {team_mode} not supported.")
 
-        self.monsters = CircularQueue[MonsterBase](6) #Keeping a track of the team for revival What do I do for revival :(
+        self.monsters = CircularQueue[MonsterBase](self.TEAM_LIMIT) #Keeping a track of the team for revival What do I do for revival :(
         
         if selection_mode == self.SelectionMode.RANDOM:
             self.select_randomly(**kwargs)
@@ -71,15 +105,24 @@ class MonsterTeam:
         
     
     def add_to_team(self, monster: MonsterBase):
+        """
+        Adds a new monster to the team
+
+        :param monster: The monster to be added to the team
+        :complexity: O(1) in best case
+                     O(log n) in worst case where n is the number of monsters in the team 
+        """
         if self.team_mode == self.TeamMode.FRONT:
             self.team.push(monster)
         elif self.team_mode == self.TeamMode.BACK:
             self.team.append(monster)
         elif self.team_mode == self.TeamMode.OPTIMISE:
             if self.descending:
-                self.team.add(monster, self.sort_mode)
+                item = ListItem(monster, self.mapping(monster, self.sort_mode))
+                self.team.add(item)
             else:
-                self.team.add(monster, self.sort_mode, False)
+                item = ListItem(monster, self.mapping(monster, self.sort_mode))
+                self.team.add(item, False)
 
             
 
@@ -95,9 +138,18 @@ class MonsterTeam:
         elif self.team_mode == self.TeamMode.BACK:
             return self.team.serve()            
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            return self.team.delete_at_index(0)
+            item = self.team.delete_at_index(0)
+            return item.value
 
     def special(self) -> None:
+        """
+        Rearranges the team based on what kind of team has been selected
+
+        :complexity: O(1)  = O(q) best case where q is the minimum between 3 and the length of the team
+                     O(nlog(n)) where n is the number of monsters in the team. This worst case occurs when the chosen
+                     team optimise team mode.
+        """
+
 
         if self.team_mode == self.TeamMode.FRONT:
             temp_team_holder = CircularQueue[MonsterBase](min(3, len(self.team)))
@@ -121,19 +173,23 @@ class MonsterTeam:
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
             self.descending = not self.descending
-            temp_team = ArraySortedListWithKeys[MonsterBase](6)
-            for _ in range(len(self.team)):
-                temp_team.add(self.retrieve_from_team(), self.sort_mode, self.descending)
-            self.team= temp_team
+            for _ in range(len(self.team)): 
+                monster = self.retrieve_from_team()
+                self.team.add(ListItem(monster, self.mapping(monster, self.sort_mode)), self.descending)
 
 
     def regenerate_team(self) -> None:
+        """
+        Regenerates the entire monster team
+
+        :complexity: O(n) worst/best case where n is the number of monsters.
+        """
 
         if self.team_mode == self.TeamMode.FRONT or self.team_mode == self.TeamMode.BACK:
             self.team.clear()
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            self.team = ArraySortedListWithKeys[MonsterBase](6)
+            self.team.reset()
             self.descending = True
 
         for _ in range(len(self.monsters)):
@@ -263,14 +319,16 @@ class MonsterTeam:
         Which monster are you spawning? 2
         This monster cannot be spawned.
         Which monster are you spawning? 1
+
+        :complexity: O(n) in both best/worst case where n is the number of monsters to be spawned
         """
         while True:
             try:
-                team_size = int(input("Enter the number of monsters on your team (between 1 and 6): "))
-                if 1 <= team_size <= 6:
+                team_size = int(input("How many monsters are there (pick between 1 and 6): "))
+                if 1 <= team_size <= self.TEAM_LIMIT:
                     break
                 print("Please enter a number between 1 and 6.")
-            except:
+            except ValueError:
                 print("Please enter a number. It must be between 1 and 6.")
         monsters = get_all_monsters()
         while team_size > 0:
@@ -282,7 +340,7 @@ class MonsterTeam:
                     team_size -= 1
                 else:
                     print("Sorry, a monster with that index does not exist or cannot be spawned. Please enter another monster index between 1 and 41.")
-            except:
+            except ValueError:
                 print("Sorry, please enter a number. It must be between 1 and 41")
 
     def select_provided(self, provided_monsters:Optional[ArrayR[type[MonsterBase]]]=None, **kwargs):
@@ -291,7 +349,7 @@ class MonsterTeam:
 
         While the type hint imples the argument can be none, this method should never be None
 
-        :complexity: 
+        :complexity: O(n) in both best/worst case where n is the number of monsters provided
 
         Example team if in TeamMode.FRONT:
         [Gustwing Instance, Aquariuma Instance, Flamikin Instance]
@@ -308,5 +366,21 @@ class MonsterTeam:
         from battle import Battle
         if currently_out.get_speed() >= enemy.get_speed() or currently_out.get_hp() >= enemy.get_hp():
             return Battle.Action.ATTACK
+        if self.team.is_empty():
+            return Battle.Action.ATTACK
         return Battle.Action.SWAP
 
+class WeakThundrake(Thundrake):
+    def get_max_hp(self):
+        return 5
+my_monsters = ArrayR(4)
+my_monsters[0] = Flamikin   # 6 HP
+my_monsters[1] = Aquariuma  # 8 HP
+my_monsters[2] = Rockodile  # 9 HP
+my_monsters[3] = WeakThundrake  # 5 HP
+team = MonsterTeam(
+    team_mode=MonsterTeam.TeamMode.OPTIMISE,
+    selection_mode=MonsterTeam.SelectionMode.PROVIDED,
+    sort_key=MonsterTeam.SortMode.HP,
+    provided_monsters=my_monsters,
+)

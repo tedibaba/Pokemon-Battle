@@ -127,16 +127,22 @@ class ArraySortedList(SortedList[T]):
     
 
 class ArraySortedListWithKeys(ArraySortedList[T]):
-    def _index_to_add(self, item: ListItem, key: str, descending : bool = True) -> int:
-        """ Find the position where the new item should be placed. """
+    """
+    A sorted list that sorts via a key that can be changed as required
+    """
+
+    def _index_to_add(self, item: ListItem, descending : bool = True) -> int:
+        """ Find the position where the new item should be placed. 
+            This binary search works on both ascending and descending lists
+           """
         if not descending:
             low = 0
             high = len(self) - 1
             while low <= high:
                 mid = (low + high) // 2
-                if getattr(self[mid], key) < getattr(item, key):
+                if self[mid].key< item.key:
                     low = mid + 1
-                elif getattr(self[mid], key) > getattr(item, key):
+                elif self[mid].key> item.key:
                     high = mid - 1
                 else:
                     return mid
@@ -145,35 +151,37 @@ class ArraySortedListWithKeys(ArraySortedList[T]):
             high = len(self) - 1
             while low <= high:
                 mid = (low + high) // 2
-                if getattr(self[mid], key) < getattr(item, key):
+                if self[mid].key< item.key:
                     high = mid - 1
-                elif getattr(self[mid], key) > getattr(item, key):
+                elif self[mid].key> item.key:
                     low = mid + 1
                 else:
                     return mid
 
         return low
         
-    def add(self, item: ListItem, key: str, descending : bool = True) -> None:
+    def add(self, item: ListItem, descending : bool = True) -> None:
         """ Add new element to the list. """
         if self.is_full():
             self._resize()
 
         # find where to place it
-        position = self._index_to_add(item, key, descending)
+        position = self._index_to_add(item, descending)
 
-        self.__setitem__(position, item, key, descending)
+        self.__setitem__(position, item, descending)
         self.length += 1
 
-    def __setitem__(self, index: int, item: ListItem, key: str, descending: bool = True) -> None:
+    def __setitem__(self, index: int, item: ListItem, descending: bool = True) -> None:
         """ Magic method. Insert the item at a given position,
             if possible (!). Shift the following elements to the right.
+
+            This inherited version allows for the key to be specified by the caller
         """
         if descending:
             if self.is_empty() or \
-            (index == 0 and getattr(item, key) >= getattr(self[index], key)) or \
-            (index == len(self) and getattr(self[index - 1], key) >= getattr(item, key)) or \
-            (index > 0 and getattr(self[index - 1], key) >= getattr(item, key) >= getattr(self[index], key)):
+            (index == 0 and item.key >= self[index].key) or \
+            (index == len(self) and self[index - 1].key >= item.key) or \
+            (index > 0 and self[index - 1].key >= item.key >= self[index].key):
                 if self.is_full():
                     self._resize()
 
@@ -184,9 +192,9 @@ class ArraySortedListWithKeys(ArraySortedList[T]):
                 raise IndexError('Element should be inserted in sorted order')
         else:
             if self.is_empty() or \
-                    (index == 0 and getattr(item, key) <= getattr(self[index], key)) or \
-                    (index == len(self) and getattr(self[index - 1], key) <= getattr(item, key)) or \
-                    (index > 0 and getattr(self[index - 1], key) <= getattr(item, key) <= getattr(self[index], key)):
+                    (index == 0 and item.key <= self[index].key) or \
+                    (index == len(self) and self[index - 1].key <= item.key) or \
+                    (index > 0 and self[index - 1].key <= item.key <= self[index].key):
 
                 if self.is_full():
                     self._resize()
@@ -198,7 +206,9 @@ class ArraySortedListWithKeys(ArraySortedList[T]):
                 raise IndexError('Element should be inserted in sorted order')
         
 
-class ArraySortedListWithoutKeys(ArraySortedList[T]):    
+class ArraySortedListWithoutKeys(ArraySortedList[T]):
+    """This sorted list """
+
     def _index_to_add(self, item: ListItem) -> int:
         """ Find the position where the new item should be placed. """
         low = 0

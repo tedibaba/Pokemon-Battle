@@ -41,6 +41,11 @@ class Element(BaseEnum):
 
     @classmethod
     def from_string(cls, string: str) -> Element:
+        """
+        :complexity: O(n * c==) worst case where n is the number of elements and c== is the cost of comparison
+                     O(c==) best case
+        """
+        
         for elem in Element:
             if elem.name.lower() == string.lower():
                 return elem
@@ -87,7 +92,7 @@ class EffectivenessCalculator:
 
         Example: EffectivenessCalculator.get_effectiveness(Element.FIRE, Element.WATER) == 0.5
 
-        :complexity: O(l * c==) best case and O(l* n * c==) worst case 
+        :complexity: O(l + c==) best case and O(l+ n * c==) worst case 
         where l is the number of letters in the longer element name, n is the number of elements and c== is the cost of comparing items
         """
 

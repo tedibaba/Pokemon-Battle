@@ -66,6 +66,7 @@ class TestBattle(TestCase):
                 Strikeon,
             ])
         )
+
         # Make them always attack
         team1.choose_action = lambda out, team: Battle.Action.ATTACK
         team2.choose_action = lambda out, team: Battle.Action.ATTACK
@@ -119,6 +120,7 @@ class TestBattle(TestCase):
             ])
         )
         # Make them always attack
+
         team1.choose_action = lambda out, team: Battle.Action.ATTACK
         team2.choose_action = lambda out, team: Battle.Action.ATTACK
         b.expected_battle_log = [
@@ -133,3 +135,8 @@ class TestBattle(TestCase):
         ]
         res = b.battle(team1, team2)
         self.assertEqual(res, Battle.Result.DRAW)
+
+    # @number("4.3")
+    # @visibility(visibility.VISIBILITY_SHOW)
+    # @timeout()
+    # def test_other_moves(self): 
