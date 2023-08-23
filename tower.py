@@ -8,7 +8,7 @@ from elements import Element, EffectivenessCalculator
 
 from data_structures.referential_array import ArrayR, ArrayRList
 from data_structures.queue_adt import CircularQueue
-from data_structures.array_sorted_list import ArraySortedListWithKeys
+
 from data_structures.bset import BSet
 from data_structures.stack_adt import ArrayStack
 from helpers import Flamikin, Faeboa
@@ -84,7 +84,11 @@ class BattleTower:
         """
         Initiates the next battle against the next team that has more than 0 lives
 
-        :complexity: O(n + )
+        :returns: A tuple containing the result of the battle, the player's team, the enemy's team, the current lives of the player, and the current lives of the enemy
+
+        :complexity: O(m + l) best case
+                     O(n + m + l) worst case 
+                     where n is the number of teams, m is the total health of the monsters on the team with the least total health and l is the number of monsters on team with the most monsters
         """
 
         for _ in range(len(self.enemy_teams)):
@@ -108,12 +112,12 @@ class BattleTower:
         team_to_fight.regenerate_team()
         self.player_team.regenerate_team()
         
-        return (result, self.player_team.team.array.__str__(), team_to_fight.team.array.__str__(), self.player_team.lives, team_to_fight.lives)
+        return (result, self.player_team, team_to_fight, self.player_team.lives, team_to_fight.lives)
 
     def process_elements(self, team : MonsterTeam):
         """
-        
-        :complexity: O(n * e * c==) in worst case 
+        :param team: The team whose elements will be processed
+        :complexity: O(nlog(n) * e * c==) in worst case. This occurs when the optimise team mode is chosen
                      O(n * c==) in best case 
                      where n is the number of monsters in team, 
                      e is the number of elements and c== is the cost of comparison
@@ -129,13 +133,18 @@ class BattleTower:
         """
         Finds the elements that are out of the meta in regard to the next battle to happen
 
-        :complexity: O()
+        :returns: An array of elements which are out of the meta
+
+        :complexity: O(t * e * c==) in worst case. This occurs when the optimise team mode has been chosen.
+                     O(t * c==) in best case 
+                     where t is the number of monsters on the biggest team, e is the number of elements
+                     and c== is the cost of comparison 
         """
 
-        team_to_fight = self.enemy_teams.peek()
+        team_to_fight = self.enemy_teams.peek() # We do not want to remove this team of the queue as it is yet to fight against the player
         in_meta_elements = BSet(len(EffectivenessCalculator.instance.element_names))
         
-        for _ in range(len(team_to_fight.team) + 1): #O(n * c== * s) worst case
+        for _ in range(len(team_to_fight.team) + 1): #O(n * (e* c==  + log(n)) 
             monster = team_to_fight.retrieve_from_team()
             monster_element = Element.from_string(monster.get_element())
 
@@ -144,7 +153,7 @@ class BattleTower:
                 self.seen_elements.remove(monster_element.value)
             team_to_fight.add_to_team(monster)
 
-        for _ in range(len(self.player_team.team) + 1): # O ( m * c== * s) + e ???? what do i do 
+        for _ in range(len(self.player_team.team) + 1): # O ( m * (c== * e + log(m))) 
             monster = self.player_team.retrieve_from_team()
             monster_element = Element.from_string(monster.get_element())
 
@@ -157,7 +166,7 @@ class BattleTower:
 
         incrementor = 0
 
-        for item in range(1, int.bit_length(self.seen_elements.elems) + 1): # O(bit_len  * s * c==)
+        for item in range(1, int.bit_length(self.seen_elements.elems) + 1): # O(bit_len)
             if item in self.seen_elements:
                 out_of_meta_elements[incrementor] = Element(item)
                 incrementor += 1
@@ -169,6 +178,10 @@ class BattleTower:
     def sort_by_lives(self):
         """
         Sorts the enemy teams according to their lives
+
+        This function sorts the enemy teams queue in O(1) space complexity. The approach to do this is to look through the entire 
+        queue for the smallest element and then append to the end of the queue. We then continue to do this until the entire queue
+        is sorted.
 
         :complexity: O(n^2) where n is the number of enemy teams
         """

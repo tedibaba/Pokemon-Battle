@@ -42,8 +42,9 @@ class Element(BaseEnum):
     @classmethod
     def from_string(cls, string: str) -> Element:
         """
-        :complexity: O(n * c==) worst case where n is the number of elements and c== is the cost of comparison
-                     O(c==) best case
+        :complexity: O(n * l * c==) worst case 
+                     O(l * c==) best case
+                     where n is the number of elements, l is the number of letters in the longest element name and c== is the cost of comparison
         """
         
         for elem in Element:

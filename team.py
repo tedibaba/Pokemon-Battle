@@ -10,7 +10,7 @@ from helpers import get_all_monsters
 from data_structures.referential_array import ArrayR
 from data_structures.queue_adt import CircularQueue
 from data_structures.stack_adt import ArrayStack
-from data_structures.array_sorted_list import ArraySortedListWithKeys, ArraySortedList
+from data_structures.array_sorted_list import TwoWayArraySortedList, ArraySortedList
 from data_structures.sorted_list_adt import ListItem
 
 from helpers import Flamikin, Aquariuma, Vineon, Normake, Thundrake, Rockodile, Mystifly, Strikeon, Faeboa, Soundcobra
@@ -79,20 +79,20 @@ class MonsterTeam:
         self.lives = 1
 
         if team_mode == self.TeamMode.FRONT:
-            self.team = ArrayStack[MonsterBase](self.TEAM_LIMIT)
+            self.team = ArrayStack[MonsterBase](self.TEAM_LIMIT) # We use a stack here as the monster last added is the one that is retrieved first
             
         elif team_mode == self.TeamMode.BACK:
-            self.team = CircularQueue[MonsterBase](self.TEAM_LIMIT)
+            self.team = CircularQueue[MonsterBase](self.TEAM_LIMIT) # We use a queue here as the monster first added is the one that is retrieved first
 
         elif team_mode == self.TeamMode.OPTIMISE:
             self.sort_mode = kwargs.get('sort_key')
             self.descending = True 
-            self.team = ArraySortedListWithKeys(self.TEAM_LIMIT) 
-  
+            self.team = TwoWayArraySortedList(self.TEAM_LIMIT) # We use a sorted list data structure since it is able to sort monsters when they are being added
+
         else:
             raise ValueError(f"team_mode {team_mode} not supported.")
 
-        self.monsters = CircularQueue[MonsterBase](self.TEAM_LIMIT) #Keeping a track of the team for revival What do I do for revival :(
+        self.monsters = CircularQueue[MonsterBase](self.TEAM_LIMIT) #Keeping a track of the team for revival.
         
         if selection_mode == self.SelectionMode.RANDOM:
             self.select_randomly(**kwargs)
@@ -124,7 +124,7 @@ class MonsterTeam:
                 item = ListItem(monster, self.mapping(monster, self.sort_mode))
                 self.team.add(item, False)
 
-            
+    # def __len__(self):
 
     def retrieve_from_team(self) -> MonsterBase:
         """
@@ -138,8 +138,7 @@ class MonsterTeam:
         elif self.team_mode == self.TeamMode.BACK:
             return self.team.serve()            
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            item = self.team.delete_at_index(0)
-            return item.value
+            return self.team.delete_at_index(0).value
 
     def special(self) -> None:
         """

@@ -3,8 +3,8 @@ import math
 
 from data_structures.referential_array import ArrayR
 from data_structures.stack_adt import ArrayStack
-from data_structures.array_sorted_list import ArraySortedListWithoutKeys
-from data_structures.queue_adt import CircularQueue
+from data_structures.array_sorted_list import ArraySortedList
+from data_structures.sorted_list_adt import ListItem
 
 class Stats(abc.ABC):
 
@@ -107,42 +107,56 @@ class ComplexStats(Stats):
         """
         
         stack = ArrayStack[str](len(formula))
-        operations = ["+", "-", '*', '/', 'power', "sqrt", "middle"] #Cannot use Array like this 
+        operations = ArrayR.from_list(["+", "-", '*', '/', 'power', "sqrt", "middle"]) 
         for i in range (len(formula)):
-            if formula[i] != None:
-                top = formula[i]
+            top = formula[i]
+            try:
                 if top not in operations:
                     if top == "level":
                         stack.push(level)
                     else:
-                        stack.push(top) 
+                        stack.push(float(top)) 
                 else:
-                    if top == "sqrt":
-                        a = stack.pop()
-                        stack.push(math.sqrt(float(a)))
-                    else:
-                        a = stack.pop()
-                        b= stack.pop()
-                        if top == "middle":
-                            c = stack.pop()
-                            sorted_list = ArraySortedListWithoutKeys[int](3)
-                            sorted_list.add(float(a))
-                            sorted_list.add(float(b))
-                            sorted_list.add(float(c))
-                            stack.push(str(sorted_list[1]))
+                    
+                        if top == "sqrt":
+                            a = stack.pop()
+                            stack.push(math.sqrt(a))
                         else:
-                            if top == "power":
-                                top = "**" 
-                            expr = f"float({b}) {top} float({a})"
-                            stack.push(str(eval(expr)))
-        return int(float((stack.pop())))
+                            a = stack.pop()
+                            b= stack.pop()
+                            if top == "middle":
+                                c = stack.pop()
+                                sorted_list = ArraySortedList[int](3)
+                                sorted_list.add(ListItem(a, a))
+                                sorted_list.add(ListItem(b, b))
+                                sorted_list.add(ListItem(c, c))
+                                stack.push(sorted_list[1].value) #the median will be the value in the middle of the sorted list so we can just grab that value and push it onto the stack
+                            else:
+                                if top == "power":
+                                    res = math.pow(b,a)
+                                elif top == "+":
+                                    res = a + b
+                                elif top == "-":
+                                    res = b - a
+                                elif top == "*":
+                                    res = a * b
+                                elif top == "/":
+                                    res = b/a
+                                stack.push(res)
+            except ValueError:
+                raise ValueError(f"{top} is either not a valid operator or number")
+        
+        if len(stack) == 1:
+            return int(stack.pop()) 
+        else:
+            raise ValueError("Invalid expression, not enough operators")
 
 def test_complex_stats():
     cs = ComplexStats(
         ArrayR.from_list([
             "5",
-            "6",
-            "+"
+            "2",
+            "power"
         ]),
         ArrayR.from_list([
             "9",
@@ -170,9 +184,9 @@ def test_complex_stats():
             "middle",
         ]),
     )
-    print(cs.get_speed(5))
-    print(cs.get_defense(1))
-    print(cs.get_max_hp(41))
+    # print(cs.get_speed(5))
+    # print(cs.get_defense(1))
+    # print(cs.get_max_hp(41))
     print(cs.get_attack(1))
 
 # test_complex_stats()

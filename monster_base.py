@@ -21,7 +21,7 @@ class MonsterBase(abc.ABC):
             self.stats = self.get_complex_stats()
 
         self.init_level = level
-        self.curr_level = level
+        self.curr_level = level # We keep two instances of the level so we can check if the health has been changed while maintaining the current level of the monster
         
         self.hp  = self.get_max_hp() # A monster spawns with its max hp
 
@@ -33,7 +33,7 @@ class MonsterBase(abc.ABC):
         """Increase the level of this monster instance by 1"""
         prev_max_health = self.get_max_hp()
         self.curr_level += 1
-        self.set_hp(self.get_max_hp() - (prev_max_health - self.get_hp()))
+        self.set_hp(self.get_max_hp() - (prev_max_health - self.get_hp())) # We must maintain the difference between the monster's max hp and its current hp
 
     def get_hp(self):
         """Get the current HP of this monster instance"""
@@ -66,9 +66,12 @@ class MonsterBase(abc.ABC):
     def attack(self, other: MonsterBase):
         """Attack another monster instance
         
-        :complexity: O(l + n * c==) worst case and O(l + c==) best case 
-        where l is the number of letters in the longest element name,
-        n is the number of elements and c== is the cost of comparison.
+        :param other: The other monster instance which is being attacked
+
+        :complexity: O(l * n * c==) worst case 
+                     O(l * c==) best case 
+                    where l is the number of letters in the longest element name,
+                    n is the number of elements and c== is the cost of comparison.
 
         """
         # Step 1: Compute attack stat vs. defense stat

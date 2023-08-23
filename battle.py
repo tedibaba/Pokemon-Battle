@@ -163,8 +163,15 @@ class Battle:
 
     def battle(self, team1: MonsterTeam, team2: MonsterTeam) -> Battle.Result:
         """
+        Simulates a battle between two monster teams
+
+        :param team1: The first monster team 
+        :param team2: The second monster team
         
-        O(n + m) where n and m are the number of monsters in team 1 and team 2 respectively????????
+        :returns: A result indicating the outcome of the battle
+
+        :complexity: O(n) best case where n is the number of monsters on the team with the smallest size
+                     O(m) worst case where m is the total health of the monsters on the team with the least total health. This will occur when no attacks are chosen.
         """
         
         EffectivenessCalculator.make_singleton()
