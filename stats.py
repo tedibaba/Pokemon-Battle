@@ -100,6 +100,10 @@ class ComplexStats(Stats):
         """
         Calculates the formula given in reverse polish notation
 
+        :implementation:
+            We use a stack for reverse polish notation because this is the most appropriate data structure
+            for traversing through the elements of the formula.
+
         :param formula: An array containing the reverse polish notation for the equation
         :param level: The level of the monster
         :return: An integer representing the final result of calculating the formula
@@ -107,49 +111,54 @@ class ComplexStats(Stats):
         """
         
         stack = ArrayStack[str](len(formula))
-        operations = ArrayR.from_list(["+", "-", '*', '/', 'power', "sqrt", "middle"]) 
         for i in range (len(formula)):
             top = formula[i]
             try:
-                if top not in operations:
-                    if top == "level":
-                        stack.push(level)
-                    else:
-                        stack.push(float(top)) 
+                if top == "level":
+                    stack.push(level)
+                elif self.is_float(top):
+                    stack.push(float(top))  
+                elif top == "sqrt":
+                    a = stack.pop()
+                    stack.push(math.sqrt(a))
                 else:
-                    
-                        if top == "sqrt":
-                            a = stack.pop()
-                            stack.push(math.sqrt(a))
-                        else:
-                            a = stack.pop()
-                            b= stack.pop()
-                            if top == "middle":
-                                c = stack.pop()
-                                sorted_list = ArraySortedList[int](3)
-                                sorted_list.add(ListItem(a, a))
-                                sorted_list.add(ListItem(b, b))
-                                sorted_list.add(ListItem(c, c))
-                                stack.push(sorted_list[1].value) #the median will be the value in the middle of the sorted list so we can just grab that value and push it onto the stack
-                            else:
-                                if top == "power":
-                                    res = math.pow(b,a)
-                                elif top == "+":
-                                    res = a + b
-                                elif top == "-":
-                                    res = b - a
-                                elif top == "*":
-                                    res = a * b
-                                elif top == "/":
-                                    res = b/a
-                                stack.push(res)
-            except ValueError:
-                raise ValueError(f"{top} is either not a valid operator or number")
+                    a = stack.pop()
+                    b= stack.pop()
+                    if top == "middle":
+                        c = stack.pop()
+                        sorted_list = ArraySortedList[int](3)
+                        sorted_list.add(ListItem(a, a))
+                        sorted_list.add(ListItem(b, b))
+                        sorted_list.add(ListItem(c, c))
+                        stack.push(sorted_list[1].value) #the median will be the value in the middle of the sorted list so we can just grab that value and push it onto the stack
+                    else:
+                        if top == "power":
+                            res = math.pow(b,a)
+                        elif top == "+":
+                            res = a + b
+                        elif top == "-":
+                            res = b - a
+                        elif top == "*":
+                            res = a * b
+                        elif top == "/":
+                            res = b/a
+                
+                        stack.push(res)
+            except (ValueError, UnboundLocalError, Exception):
+                raise Exception(f"{top} is either not a valid operator or number")
         
-        if len(stack) == 1:
+        if len(stack) == 1: #The stack must only have one item left in the stack
             return int(stack.pop()) 
         else:
             raise ValueError("Invalid expression, not enough operators")
+        
+    def is_float(self, x):
+        try:
+            float(x)
+            return True
+        except ValueError:
+            return False
+
 
 def test_complex_stats():
     cs = ComplexStats(
@@ -189,4 +198,3 @@ def test_complex_stats():
     # print(cs.get_max_hp(41))
     print(cs.get_attack(1))
 
-# test_complex_stats()

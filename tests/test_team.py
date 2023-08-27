@@ -159,6 +159,7 @@ class TestTeam(TestCase):
         # Aquariuma, Thundrake, Flamikin, Rockodile
 
         team.special()
+
         # Rockodile, Flamikin, Thundrake, Aquariuma
         rockodile = team.retrieve_from_team()
         flamikin = team.retrieve_from_team()

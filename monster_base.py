@@ -66,18 +66,23 @@ class MonsterBase(abc.ABC):
     def attack(self, other: MonsterBase):
         """Attack another monster instance
         
+        :implmentation:
+            # Step 1: Compute attack stat vs. defense stat
+            # Step 2: Apply type effectiveness
+            # Step 3: Ceil to int
+            # Step 4: Lose HP
+
         :param other: The other monster instance which is being attacked
 
-        :complexity: O(l * n * c==) worst case 
-                     O(l * c==) best case 
-                    where l is the number of letters in the longest element name,
-                    n is the number of elements and c== is the cost of comparison.
+        :complexity: 
+            Best case: O(l)
+            Worst case: O(l * n)
+
+            where l is the number of letters in the longest element name,
+            n is the number of elements
 
         """
-        # Step 1: Compute attack stat vs. defense stat
-        # Step 2: Apply type effectiveness
-        # Step 3: Ceil to int
-        # Step 4: Lose HP
+
         self_element, other_element = Element.from_string(self.get_element()), Element.from_string(other.get_element())
         element_multiplier = EffectivenessCalculator.get_effectiveness(self_element, other_element)
         if other.get_defense() < self.get_attack() / 2:

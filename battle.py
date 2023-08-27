@@ -5,9 +5,8 @@ import math
 
 from base_enum import BaseEnum
 from team import MonsterTeam
-from elements import EffectivenessCalculator, Element
+from elements import EffectivenessCalculator
 from data_structures.referential_array import ArrayR
-from helpers import Flamikin, Aquariuma, Vineon, Strikeon, Normake, Marititan, Leviatitan, Treetower, Infernoth
 
 
 class Battle:
@@ -38,8 +37,24 @@ class Battle:
         * remove fainted monsters and retrieve new ones.
         * return the battle result if completed.
 
-        :complexity: O(nlog(n)) worst case where n is the number of monsters. This occurs when a special is called on a team with the optimise mode
-                     O(1) best case. This occurs when SWAP is called on a team with either the front or back mode
+        :complexity: 
+
+        FRONT/BACK:
+            Best case: O(1)
+            Worst case: O(l * e)
+
+            Best case occurs when SWAP is called by both teams
+            Worst case occurs when both teams choose to attack
+            
+        OPTIMISE:
+            Best case: O(n)
+            Worst case:  O(n^2)
+
+            The best case occurs when SWAP is called by both teams
+            The worst case occurs when a special is called on both teams
+
+        where n is the number of monsters, l is the number of letters in the longest element name and
+        e is the number of elements
 
         """
 
@@ -56,76 +71,73 @@ class Battle:
             self.out2 = self.team2.retrieve_from_team()
             self.team2.add_to_team(temp)
 
-        first_monster_killed = False
-        second_monster_killed = False                                     
-
-
+        #We save the monster so we can check process the attack on the monster that been attacked instead of the present monster alive
+        monster1 = self.out1
+        monster2 = self.out2
         if self.team1.choose_action(self.out1, self.out2) == self.Action.ATTACK and self.team2.choose_action(self.out2, self.out1) == self.Action.ATTACK:
-            if self.out1.get_speed () > self.out2.get_speed():
-                self.out1.attack(self.out2)
-                second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1)
+            if monster1.get_speed () > monster2.get_speed():
+                monster1.attack(monster2)
+                self.process_post_attack(monster2, self.team2, 2, monster1)
 
                 #It cant retaliate if it just died
-                if not second_monster_killed:
-                    self.out2.attack(self.out1)
-                    first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2)
+                if monster2.alive():
+                    monster2.attack(monster1)
+                    self.process_post_attack(monster1, self.team1, 1, monster2)
                 
-
-            elif self.out1.get_speed () < self.out2.get_speed():
-                self.out2.attack(self.out1)
-                first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2)
+            elif monster1.get_speed () < monster2.get_speed():
+                monster2.attack(monster1)
+                self.process_post_attack(monster1, self.team1, 1, monster2)
                 
-                if not first_monster_killed:
-                    self.out1.attack(self.out2)
-
-                    second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1)
+                if monster1.alive():
+                    monster1.attack(monster2)
+                    self.process_post_attack(monster2, self.team2, 2, monster1)
                     
-
             else: #The equal logic will not be able to follow the structure in process_post_attack() due to this being the only way for a draw to occur
-                self.out1.attack(self.out2)
-                self.out2.attack(self.out1)
+                monster1.attack(monster2)
+                monster2.attack(monster1)
 
-                #We save the monster so we can check process the attack on the monster that been attacked instead of the present monster alive
-                monster1 = self.out1
-                monster2 = self.out2
-                first_monster_killed =self.process_post_attack(monster1, self.team1, 1, monster2, True)
-                second_monster_killed =self.process_post_attack(monster2, self.team2, 2, monster1, True)
+                self.process_post_attack(monster1, self.team1, 1, monster2, True)
+                self.process_post_attack(monster2, self.team2, 2, monster1, True)
                 
-
-        elif self.team2.choose_action(self.out2, self.out1) == self.Action.ATTACK:
-            self.out2.attack(self.out1)
-            first_monster_killed = self.process_post_attack(self.out1, self.team1, 1, self.out2)
-
+        elif self.team2.choose_action(monster2, monster1) == self.Action.ATTACK:
+            monster2.attack(monster1)
+            self.process_post_attack(monster1, self.team1, 1, monster2)
             
-        elif self.team1.choose_action(self.out1, self.out2) == self.Action.ATTACK:
-            self.out1.attack(self.out2)
-            second_monster_killed = self.process_post_attack(self.out2, self.team2, 2, self.out1)
+        elif self.team1.choose_action(monster1, monster2) == self.Action.ATTACK:
+            monster1.attack(monster2)
+            self.process_post_attack(monster2, self.team2, 2, monster1)
 
-        if not first_monster_killed and not second_monster_killed: #If neither monster dies, we must decrement their health by 1
-            self.out2.set_hp(self.out2.get_hp() - 1)
-            self.out1.set_hp(self.out1.get_hp() - 1)
+        if monster1.alive() and monster2.alive(): #If neither monster dies, we must decrement their health by 1
+            monster2.set_hp(monster2.get_hp() - 1)
+            monster1.set_hp(monster1.get_hp() - 1)
 
-            monster1 = self.out1
-            monster2 = self.out2
             self.process_post_attack(monster2, self.team2, 2, monster1, True)
             self.process_post_attack(monster1, self.team1, 1, monster2, True)
         
 
-
-    def process_post_attack(self, attacked_monster, team, team_num, attacking_monster, use_draw_logic = False):
+    def process_post_attack(self, attacked_monster, team, team_num, attacking_monster, use_draw_logic = False) -> bool:
         """
-        Processes what happens after a monster has attacked
-
+        The function processes what happens after a monster has attacked, including checking if the
+        attacked monster has been defeated, updating the game result, retrieving a monster from the team
+        if necessary, leveling up the attacking monster, and evolving the attacking monster if ready.
+        
         :param attacked_monster: The monster that was attacked
         :param team: The team of the monster that was attacked
-        :param team_num: The number of the team that was attacked
-        :param attacking_monster: The monster that attacked
-        :param use_draw_logic: A boolean flag indicating whether or not logic for a draw should be used (i.e. when both monsters have been damaged at the same time). 
+        :param team_num: The parameter `team_num` represents the number of the team that was attacked.
+        It is used to determine which team the attacking monster belongs to and which team the attacked
+        monster belongs to. The value of `team_num` can be either 1 or 2, indicating the first team or
+        the second
+        :param attacking_monster: The monster that is performing the attack
+        :param use_draw_logic: The `use_draw_logic` parameter is a boolean flag that indicates whether
+        or not logic for a draw should be used. It is used to handle the case when both monsters have
+        been damaged at the same time. If `use_draw_logic` is set to `True`, then the logic for a draw,
+        defaults to False (optional)
+        :returns: a boolean value. If a monster has died as a result of the attack, the function returns
+        True. Otherwise, it returns False.
         
         :complexity: O(1) 
         """
-        if attacked_monster.get_hp() <= 0:
-            
+        if attacked_monster.get_hp() <= 0:   
             if team.team.is_empty():
                 if self.result:
                     self.result = self.Result.DRAW
@@ -136,11 +148,9 @@ class Battle:
                         self.result =  self.Result.TEAM1
             else:
                 if team_num == 1:
-
                     self.out1 = team.retrieve_from_team()
                     
                 else:
-
                     self.out2 = team.retrieve_from_team()
 
             if attacking_monster.get_hp():
@@ -156,10 +166,6 @@ class Battle:
                             self.out2 = attacking_monster.evolve() 
                         elif team_num == 2 and  attacking_monster.get_hp(): 
                             self.out1 = attacking_monster.evolve()
-            
-
-            return True #This only happens when a monster died, in which case the other monster should not be allowed to attack
-        return False
 
     def battle(self, team1: MonsterTeam, team2: MonsterTeam) -> Battle.Result:
         """
@@ -170,8 +176,12 @@ class Battle:
         
         :returns: A result indicating the outcome of the battle
 
-        :complexity: O(n) best case where n is the number of monsters on the team with the smallest size
-                     O(m) worst case where m is the total health of the monsters on the team with the least total health. This will occur when no attacks are chosen.
+        :complexity: 
+            Best case: O(n) 
+            Worst case: O(m) 
+
+            where n is the number of monsters on the team with the smallest size and 
+            m is the total health of the monsters on the team with the least total health. This will occur when no attacks are chosen.
         """
         
         EffectivenessCalculator.make_singleton()

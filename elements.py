@@ -42,9 +42,9 @@ class Element(BaseEnum):
     @classmethod
     def from_string(cls, string: str) -> Element:
         """
-        :complexity: O(n * l * c==) worst case 
-                     O(l * c==) best case
-                     where n is the number of elements, l is the number of letters in the longest element name and c== is the cost of comparison
+        :complexity: O(n * l) worst case 
+                     O(l) best case
+                     where n is the number of elements, l is the number of letters in the longest element name 
         """
         
         for elem in Element:
@@ -93,8 +93,16 @@ class EffectivenessCalculator:
 
         Example: EffectivenessCalculator.get_effectiveness(Element.FIRE, Element.WATER) == 0.5
 
-        :complexity: O(l + c==) best case and O(l+ n * c==) worst case 
-        where l is the number of letters in the longer element name, n is the number of elements and c== is the cost of comparing items
+        :param type1: The parameter `type1` represents the attacking element, and `type2` represents the
+        defending element
+        :param type2: Element - the type of element being attacked
+        :return: the effectiveness of type1 attacking type2.
+   
+        :complexity: 
+            Best case: O(l)
+            Worst case: O(l+ n)
+
+            where l is the number of letters in the longer element name, n is the number of elements and c== is the cost of comparing items
         """
 
         row = cls.instance.element_names.index(type1.name.capitalize())

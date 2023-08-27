@@ -10,10 +10,8 @@ from helpers import get_all_monsters
 from data_structures.referential_array import ArrayR
 from data_structures.queue_adt import CircularQueue
 from data_structures.stack_adt import ArrayStack
-from data_structures.array_sorted_list import TwoWayArraySortedList, ArraySortedList
+from data_structures.array_sorted_list import ArraySortedList
 from data_structures.sorted_list_adt import ListItem
-
-from helpers import Flamikin, Aquariuma, Vineon, Normake, Thundrake, Rockodile, Mystifly, Strikeon, Faeboa, Soundcobra
 
 
 if TYPE_CHECKING:
@@ -67,28 +65,50 @@ class MonsterTeam:
         
 
     def __init__(self, team_mode: TeamMode, selection_mode, **kwargs) -> None:
-        # Add any preinit logic here.
         """
-        :complexity: O(n+m) in both best case 
-                     O(n + mlog(m)) in worst case
+        The function initializes a team of monsters based on the team mode and selection mode provided.
         
-        where n is the size of the team
+        :implementation:
+            We use a different data structure for each team mode.
+            For the front team mode we use a stack as the monster last added is the one that is retrieved first
+            For the back team mode we use a queue here as the monster first added is the one that is retrieved first
+            For the optimise team mode we use a sorted list data structure since it is able to sort monsters when they are being added
+
+        :param team_mode: The `team_mode` parameter determines the mode in which the team is organized.
+        :param selection_mode: The `selection_mode` parameter determines how the monsters are selected
+        for the team.
+
+        :complexity: 
+        All best cases are considered in the context of using the select provided to create the teams
+        All worst cases are considered in the context of using the random generator to create the teams
+        
+        FRONT:
+                O(n+m) best case
+                O(n+ a * m) worst case         
+        BACK:
+                O(n+m) best case
+                O(n + a*m) worst case 
+        OPTIMISE:
+                O(n + m) best case 
+                O(a*n*log(m!))  worst case
+        
+        where n is the size of the team,
+        a is the number of monsters in the game
         and m is the number of monsters to be added
+        
         """
+
         self.team_mode = team_mode
         self.lives = 1
 
         if team_mode == self.TeamMode.FRONT:
-            self.team = ArrayStack[MonsterBase](self.TEAM_LIMIT) # We use a stack here as the monster last added is the one that is retrieved first
-            
+            self.team = ArrayStack[MonsterBase](self.TEAM_LIMIT) 
         elif team_mode == self.TeamMode.BACK:
-            self.team = CircularQueue[MonsterBase](self.TEAM_LIMIT) # We use a queue here as the monster first added is the one that is retrieved first
-
+            self.team = CircularQueue[MonsterBase](self.TEAM_LIMIT)
         elif team_mode == self.TeamMode.OPTIMISE:
             self.sort_mode = kwargs.get('sort_key')
             self.descending = True 
-            self.team = TwoWayArraySortedList(self.TEAM_LIMIT) # We use a sorted list data structure since it is able to sort monsters when they are being added
-
+            self.team = ArraySortedList(self.TEAM_LIMIT) 
         else:
             raise ValueError(f"team_mode {team_mode} not supported.")
 
@@ -108,30 +128,72 @@ class MonsterTeam:
         """
         Adds a new monster to the team
 
+        :implementation: 
+            According to which team mode has been chosen, we must change how we add to the team
+            since each team mode uses a different data structure. 
+            For the optimise team mode, we need to additionally check if we need to sort in a descending or ascending order
+            since the special for optimise changes the order that must be maintained.
+
         :param monster: The monster to be added to the team
-        :complexity: O(1) in best case
-                     O(log n) in worst case where n is the number of monsters in the team 
+
+        :complexity: 
+        
+        FRONT:
+            Best case: O(1)
+            Worst case: O(1)
+        BACK:
+            Best case: O(1)
+            Worst case: O(1)
+        OPTIMISE:
+            Best case: O(log(n))
+            Worst case: O(n)
+            
+            where n is the number of monsters in the team 
         """
         if self.team_mode == self.TeamMode.FRONT:
             self.team.push(monster)
         elif self.team_mode == self.TeamMode.BACK:
             self.team.append(monster)
         elif self.team_mode == self.TeamMode.OPTIMISE:
-            if self.descending:
-                item = ListItem(monster, self.mapping(monster, self.sort_mode))
-                self.team.add(item)
-            else:
-                item = ListItem(monster, self.mapping(monster, self.sort_mode))
-                self.team.add(item, False)
+            self.optimise_add(self.team, monster)
 
-    # def __len__(self):
+    def optimise_add(self, team : ArraySortedList, monster : MonsterBase) -> None:
+        """
+        The function optimise_add adds a monster to a team with a specific sorting mode.
+        
+        :param team: The "team" parameter is an object representing a team. 
+        :param monster: The "monster" parameter is an object representing a monster. 
+        """
+        if self.descending:
+            item = ListItem(monster, -1 * self.mapping(monster, self.sort_mode))
+            team.add(item)
+        else:
+            item = ListItem(monster, self.mapping(monster, self.sort_mode))
+            team.add(item)
 
     def retrieve_from_team(self) -> MonsterBase:
         """
-        Retrieves the next monster in the team.
+        The function retrieves a monster object from a team based on the team mode.  
+
+        :implementation:
+            Based on the team mode, the function will return a monster from the team differently.
 
         :returns: A monster object
-        :complexity: O(1) both worst/best case
+        :complexity: 
+        
+        FRONT:
+            Best case: O(1)
+            Worst case: O(1)
+        BACK:
+            Best case: O(1)
+            Worst case: O(1)
+        OPTIMISE:
+            Best case: O(n)
+            Worst case: O(n)
+            
+            This is because when an element is deleted, all the elements after that one will need to be shifted to the left.
+
+        where n is the number of monsters in the team
         """
         if self.team_mode == self.TeamMode.FRONT:
             return self.team.pop()
@@ -142,11 +204,36 @@ class MonsterTeam:
 
     def special(self) -> None:
         """
-        Rearranges the team based on what kind of team has been selected
+        The special function rearranges the team based on the selected team mode.
 
-        :complexity: O(1)  = O(q) best case where q is the minimum between 3 and the length of the team
-                     O(nlog(n)) where n is the number of monsters in the team. This worst case occurs when the chosen
-                     team optimise team mode.
+        :implementation:
+            Based on which team mode is selected, special will be executed differently.
+            FRONT: The first 3 monsters in the team will be appended into a queue and then pushed back onto the stack.
+            This will effectively reverse the order of the first 3 monsters in the team
+            BACK: The first half of the team will be appended into a queue and the second half will be pushed onto the stack.
+            Then the second half of the team will be appended back into the queue and then the first half of the team will be 
+            appended back into the queue.
+            OPTIMISE: The descending boolean flag will be set to its opposite value and then each monster will be reinserted back into
+            the team.
+
+        :complexity: 
+        FRONT:
+            Best case: O(1)
+            Worst case: O(1)
+
+            The worst case is O(1) since in the long run as the team grows arbitrarily large, 
+            the largest amount that will need to be reversed is 3 which is a constant
+        BACK:
+            Best case: O(n)
+            Worst case: O(n)
+        OPTIMISE:
+            Best case: O(nlog(n))
+            Worst case: O(n^2)
+            
+            The best case occurs when we switch from ascending to descending and the worst case occurs when we switch
+            from descending to ascending
+
+        where n is the number of monsters in the team. 
         """
 
 
@@ -171,17 +258,35 @@ class MonsterTeam:
                 self.team.append(first_half_team.serve())
 
         elif self.team_mode == self.TeamMode.OPTIMISE:
+            temp = ArraySortedList[MonsterBase](len(self.team))
             self.descending = not self.descending
             for _ in range(len(self.team)): 
-                monster = self.retrieve_from_team()
-                self.team.add(ListItem(monster, self.mapping(monster, self.sort_mode)), self.descending)
+                self.optimise_add(temp, self.retrieve_from_team())
+            self.team = temp
 
 
     def regenerate_team(self) -> None:
         """
-        Regenerates the entire monster team
+        The `regenerate_team` function resets the HP of all monsters in the team and adds them back to
+        the team.
+        
+        :implementation:
+            The team will be reset. This will be done differently depending on which team mode has been selected.
+            Then, using the queue which stored all the monsters that were orginally in the team will be readded back into the team.
+            They will also will be maintained within the queue so the team can be regenerated again if necessary.
 
-        :complexity: O(n) worst/best case where n is the number of monsters.
+        :complexity: 
+        FRONT:
+            Best case: O(n)
+            Worst case: O(n)
+        BACK:
+            Best case: O(n)
+            Worst case: O(n)
+        OPTIMISE:
+            Best case: O(n)
+            Worst case: O(nlog(n!))
+
+        where n is the number of monsters.
         """
 
         if self.team_mode == self.TeamMode.FRONT or self.team_mode == self.TeamMode.BACK:
@@ -197,7 +302,20 @@ class MonsterTeam:
                 self.add_to_team(monster)
                 self.monsters.append(monster)
 
+    def __len__(self):
+        return len(self.team)
+
     def select_randomly(self):
+        """"
+        Creates a random team of monsters
+
+        :complexity:
+        Best case: O(m*n)
+        Worst Case: O(m*n)
+
+        where m is the number of monsters and n is the team size
+    
+        """
         team_size = RandomGen.randint(1, self.TEAM_LIMIT)
         monsters = get_all_monsters()
         n_spawnable = 0
@@ -369,17 +487,3 @@ class MonsterTeam:
             return Battle.Action.ATTACK
         return Battle.Action.SWAP
 
-class WeakThundrake(Thundrake):
-    def get_max_hp(self):
-        return 5
-my_monsters = ArrayR(4)
-my_monsters[0] = Flamikin   # 6 HP
-my_monsters[1] = Aquariuma  # 8 HP
-my_monsters[2] = Rockodile  # 9 HP
-my_monsters[3] = WeakThundrake  # 5 HP
-team = MonsterTeam(
-    team_mode=MonsterTeam.TeamMode.OPTIMISE,
-    selection_mode=MonsterTeam.SelectionMode.PROVIDED,
-    sort_key=MonsterTeam.SortMode.HP,
-    provided_monsters=my_monsters,
-)
